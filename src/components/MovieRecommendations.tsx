@@ -7,9 +7,10 @@ interface MovieRecommendationsProps {
   recommendations: MovieRecommendationItem[];
   isLoading: boolean;
   error?: string | null;
+  onCardClick: (movie: MovieRecommendationItem) => void;
 }
 
-export function MovieRecommendations({ recommendations, isLoading, error }: MovieRecommendationsProps) {
+export function MovieRecommendations({ recommendations, isLoading, error, onCardClick }: MovieRecommendationsProps) {
   if (isLoading) {
     return (
       <div className="mt-8">
@@ -54,7 +55,7 @@ export function MovieRecommendations({ recommendations, isLoading, error }: Movi
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {recommendations.map((movie, index) => (
-          <MovieCard key={`${movie.title}-${index}`} movie={movie} index={index} />
+          <MovieCard key={`${movie.title}-${index}`} movie={movie} index={index} onCardClick={onCardClick} />
         ))}
       </div>
     </div>

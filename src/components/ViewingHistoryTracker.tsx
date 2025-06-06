@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -30,7 +31,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
 
   const handleAddMovie = () => {
     if (!newMovieTitle.trim()) {
-      toast({ title: "Error", description: "Movie title cannot be empty.", variant: "destructive" });
+      toast({ title: "Error", description: "Title cannot be empty.", variant: "destructive" });
       return;
     }
     const newEntry: ViewingHistoryEntry = {
@@ -48,7 +49,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
 
   const handleRemoveMovie = (id: string) => {
     onHistoryChange(viewingHistory.filter(movie => movie.id !== id));
-    toast({ title: "History Updated", description: `Movie removed from your viewing history.` });
+    toast({ title: "History Updated", description: `Item removed from your viewing history.` });
   };
 
   const handleAnalyzePatterns = async () => {
@@ -91,13 +92,13 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       complete: (results) => {
         const newEntries: ViewingHistoryEntry[] = [];
         results.data.forEach((row, index) => {
-          const title = row['Title'] || row['title']; // Common column names for title in Netflix CSV
+          const title = row['Title'] || row['title']; 
           if (title) {
             newEntries.push({
-              id: `${Date.now()}-${index}`, // More robust unique ID
+              id: `${Date.now()}-${index}`, 
               title: title.trim(),
-              rating: 3, // Default rating
-              completed: true, // Assume completed if in history
+              rating: 3, 
+              completed: true, 
             });
           }
         });
@@ -109,13 +110,13 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           toast({ title: "Import Info", description: "No new items found or 'Title' column missing in CSV.", variant: "default" });
         }
         if (fileInputRef.current) {
-          fileInputRef.current.value = ""; // Reset file input
+          fileInputRef.current.value = ""; 
         }
       },
       error: (error) => {
         toast({ title: "CSV Parsing Error", description: error.message, variant: "destructive" });
         if (fileInputRef.current) {
-          fileInputRef.current.value = ""; // Reset file input
+          fileInputRef.current.value = ""; 
         }
       },
     });
@@ -128,23 +129,23 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <History className="h-6 w-6" /> Your Viewing History
           </CardTitle>
-          <CardDescription>Track content you've watched to improve recommendations. You can add manually or import from a Netflix CSV.</CardDescription>
+          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV (e.g., from Netflix).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="movie-title">Title</Label>
+            <Label htmlFor="item-title">Title</Label>
             <Input
-              id="movie-title"
+              id="item-title"
               value={newMovieTitle}
               onChange={(e) => setNewMovieTitle(e.target.value)}
-              placeholder="e.g., The Cinematic Adventure"
+              placeholder="e.g., The Grand Adventure"
             />
           </div>
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <Label htmlFor="movie-rating">Rating (1-5)</Label>
+              <Label htmlFor="item-rating">Rating (1-5)</Label>
               <Input
-                id="movie-rating"
+                id="item-rating"
                 type="number"
                 min="1"
                 max="5"
@@ -154,11 +155,11 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
             </div>
             <div className="flex items-center space-x-2 pt-6">
               <Checkbox
-                id="movie-completed"
+                id="item-completed"
                 checked={newMovieCompleted}
                 onCheckedChange={(checked) => setNewMovieCompleted(Boolean(checked))}
               />
-              <Label htmlFor="movie-completed">Completed?</Label>
+              <Label htmlFor="item-completed">Completed?</Label>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -166,7 +167,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               <ListChecks className="mr-2 h-4 w-4" /> Add Manually
             </Button>
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1">
-              <Upload className="mr-2 h-4 w-4" /> Import Netflix CSV
+              <Upload className="mr-2 h-4 w-4" /> Upload Watch History
             </Button>
             <input
               type="file"

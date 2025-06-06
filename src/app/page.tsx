@@ -12,15 +12,17 @@ import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
 import { ViewingHistoryTracker } from '@/components/ViewingHistoryTracker';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Loader2 } from 'lucide-react';
-import { Card } from '@/components/ui/card'; // Added for placeholder
-import { Skeleton } from '@/components/ui/skeleton'; // Added for placeholder
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const LS_VIEWING_HISTORY_KEY = 'fireSyncViewingHistory';
 const LS_USER_PREFERENCES_KEY = 'fireSyncUserPreferences';
+const LS_PENDING_FEEDBACK_KEY = 'fireSyncPendingFeedbackItem';
 
 export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -36,11 +38,13 @@ export default function HomePage() {
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
 
+  const [pendingFeedbackMovie, setPendingFeedbackMovie] = useState<MovieRecommendationItem | null>(null);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+
   const { toast } = useToast();
 
-  // Effect for client-side initialization (localStorage, initial selectedTime)
   useEffect(() => {
-    setIsMounted(true); // Mark as mounted, client-side logic can now run
+    setIsMounted(true); 
 
     const storedHistory = localStorage.getItem(LS_VIEWING_HISTORY_KEY);
     if (storedHistory) {
@@ -58,54 +62,50 @@ export default function HomePage() {
         if (prefs.mood) setMood(prefs.mood);
         if (prefs.userWeights) setUserWeights(prefs.userWeights);
         if (prefs.contentType) setContentType(prefs.contentType);
-        
-        if (prefs.selectedTime) {
-          setSelectedTime(prefs.selectedTime);
-        }
-        // If prefs.selectedTime is not set, selectedTime remains undefined.
-        // It will be potentially set by the next useEffect if detectedTime is available.
+        if (prefs.selectedTime) setSelectedTime(prefs.selectedTime);
       } catch (e) {
         console.error("Failed to parse preferences from localStorage", e);
       }
     }
-  }, []); // Empty dependency array: runs once on mount client-side
 
-  // Effect to set selectedTime from detectedTime if not set by localStorage
+    const pendingItemJSON = localStorage.getItem(LS_PENDING_FEEDBACK_KEY);
+    if (pendingItemJSON) {
+      try {
+        const item = JSON.parse(pendingItemJSON) as MovieRecommendationItem;
+        setPendingFeedbackMovie(item);
+        setShowFeedbackDialog(true);
+      } catch (e) {
+        console.error("Failed to parse pending feedback item from localStorage", e);
+        localStorage.removeItem(LS_PENDING_FEEDBACK_KEY); // Clear corrupted item
+      }
+    }
+  }, []);
+
   useEffect(() => {
-    if (!isMounted) return; // Ensure this runs only after initial mount and setup
-
-    // If selectedTime is still undefined (meaning not set from localStorage)
-    // AND detectedTime is now available, then use detectedTime.
+    if (!isMounted) return;
     if (selectedTime === undefined && detectedTime !== undefined) {
-       // Check if preferences were loaded and if selectedTime was explicitly null/undefined there
       const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
       let canSetFromDetectedTime = true;
       if (storedPreferences) {
         try {
           const prefs = JSON.parse(storedPreferences);
           if (prefs.hasOwnProperty('selectedTime') && prefs.selectedTime !== undefined) {
-            // If localStorage had a selectedTime, it should have been set by the previous effect.
-            // This condition means selectedTime from local storage was indeed undefined or not present.
+            // localStorage had a selectedTime, it should have been set.
           }
-        } catch (e) { /* ignore parsing error here, focus on detectedTime */ }
+        } catch (e) { /* ignore */ }
       }
-      
       if (canSetFromDetectedTime) {
         setSelectedTime(detectedTime);
       }
     }
   }, [isMounted, detectedTime, selectedTime]);
 
-
-  // Effect for saving to localStorage
   useEffect(() => {
-    if (!isMounted) return; // Only save after client has mounted and states are initialized
-
+    if (!isMounted) return;
     localStorage.setItem(LS_VIEWING_HISTORY_KEY, JSON.stringify(viewingHistory));
     const preferencesToStore = { mood, selectedTime, userWeights, contentType };
     localStorage.setItem(LS_USER_PREFERENCES_KEY, JSON.stringify(preferencesToStore));
   }, [isMounted, viewingHistory, mood, selectedTime, userWeights, contentType]);
-
 
   const handleGetRecommendations = useCallback(async () => {
     if (!selectedTime) {
@@ -135,6 +135,34 @@ export default function HomePage() {
     setSelectedTimeManually(newTime); 
   };
 
+  const handleCardClick = (movie: MovieRecommendationItem) => {
+    if (movie.platformUrl) { // Only store if it's an external link they might watch
+        localStorage.setItem(LS_PENDING_FEEDBACK_KEY, JSON.stringify(movie));
+    }
+  };
+
+  const handleFeedbackSubmit = (watched: boolean, rating?: number, completed?: boolean) => {
+    if (pendingFeedbackMovie && watched && rating !== undefined && completed !== undefined) {
+      const newEntry: ViewingHistoryEntry = {
+        id: Date.now().toString(),
+        title: pendingFeedbackMovie.title,
+        rating: rating,
+        completed: completed,
+      };
+      setViewingHistory(prev => [...prev, newEntry]);
+      toast({ title: "History Updated", description: `${pendingFeedbackMovie.title} added with your feedback.` });
+    }
+    localStorage.removeItem(LS_PENDING_FEEDBACK_KEY);
+    setShowFeedbackDialog(false);
+    setPendingFeedbackMovie(null);
+  };
+
+  const handleFeedbackDismiss = () => {
+    localStorage.removeItem(LS_PENDING_FEEDBACK_KEY);
+    setShowFeedbackDialog(false);
+    setPendingFeedbackMovie(null);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
@@ -162,6 +190,7 @@ export default function HomePage() {
               recommendations={recommendations}
               isLoading={isLoadingRecommendations}
               error={recommendationError}
+              onCardClick={handleCardClick}
             />
             <Separator className="my-8" />
             {isMounted ? (
@@ -180,8 +209,16 @@ export default function HomePage() {
         </div>
       </main>
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
-        FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Movie & TV Guide
+        FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Content Guide
       </footer>
+      {isMounted && pendingFeedbackMovie && (
+        <FeedbackDialog
+          isOpen={showFeedbackDialog}
+          movie={pendingFeedbackMovie}
+          onSubmit={handleFeedbackSubmit}
+          onDismiss={handleFeedbackDismiss}
+        />
+      )}
     </div>
   );
 }

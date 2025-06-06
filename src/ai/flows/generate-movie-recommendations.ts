@@ -36,6 +36,8 @@ const ContentRecommendationSchema = z.object({
     .describe(
       'The reason for recommending this item based on the user\'s mood, time of day, viewing history, and content type preference.'
     ),
+  platform: z.string().describe('The name of the OTT platform where this content is available (e.g., Netflix, Hulu, Amazon Prime Video).'),
+  platformUrl: z.string().url().optional().describe('A direct URL to watch the content on the specified platform. If unknown or not applicable, this can be omitted.'),
 });
 
 const GenerateContentRecommendationsOutputSchema = z.array(
@@ -68,11 +70,13 @@ Time of day: {{{timeOfDay}}}
 Viewing history: {{{viewingHistory}}}
 Preferred content type: {{{contentType}}}
 
-Provide the recommendations with their title, a brief description, and a reason for the suggestion based on the user's current state (mood, time), past history, and preferred content type.
+Provide the recommendations with their title, a brief description, the reason for the suggestion, the OTT platform it's available on (e.g., Netflix, Amazon Prime, Hulu), and a direct URL to the content on that platform if available.
 Each recommendation should have the following information:
 - title: The title of the movie or TV series.
 - description: A brief description.
 - reason: The reason for recommending this.
+- platform: The name of the OTT platform.
+- platformUrl: The direct URL to the content on the platform. If a direct URL is not easily found, provide a search URL on that platform for the title, or omit if not feasible.
 
 Return a JSON array of recommendations.`,
 });
