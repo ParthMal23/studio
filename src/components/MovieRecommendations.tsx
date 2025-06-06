@@ -1,10 +1,11 @@
+
 import type { MovieRecommendationItem } from '@/lib/types';
 import { MovieCard } from './MovieCard';
 import { AlertTriangle, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MovieRecommendationsProps {
-  recommendations: MovieRecommendationItem[];
+  recommendations: MovieRecommendationItem[] | undefined; // Allow undefined for robustness
   isLoading: boolean;
   error?: string | null;
   onCardClick: (movie: MovieRecommendationItem) => void;
@@ -38,7 +39,10 @@ export function MovieRecommendations({ recommendations, isLoading, error, onCard
     );
   }
 
-  if (recommendations.length === 0 && !isLoading) {
+  // Use (recommendations || []) to ensure .map is always called on an array
+  const currentRecommendations = recommendations || [];
+
+  if (currentRecommendations.length === 0 && !isLoading) {
     return (
       <div className="mt-8 text-center py-10">
         <Zap className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -54,7 +58,7 @@ export function MovieRecommendations({ recommendations, isLoading, error, onCard
         <Zap className="h-7 w-7 text-accent" /> Here are your picks!
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((movie, index) => (
+        {currentRecommendations.map((movie, index) => (
           <MovieCard key={`${movie.title}-${index}`} movie={movie} index={index} onCardClick={onCardClick} />
         ))}
       </div>
