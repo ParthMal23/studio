@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'FireSync - Personalized Movie Recommendations',
-  description: 'Get movie recommendations tailored to your mood, time of day, and viewing history.',
+  title: 'FireSync - Personalized Movie & TV Recommendations',
+  description: 'Get movie and TV series recommendations tailored to your mood, time of day, and viewing history.',
 };
 
 export default function RootLayout({

@@ -1,39 +1,36 @@
 "use server";
 
-import { generateMovieRecommendations, GenerateMovieRecommendationsInput, GenerateMovieRecommendationsOutput } from "@/ai/flows/generate-movie-recommendations";
+import { generateContentRecommendations, GenerateContentRecommendationsInput, GenerateContentRecommendationsOutput } from "@/ai/flows/generate-movie-recommendations"; // Filename remains, but functions are updated
 import { analyzeWatchPatterns, AnalyzeWatchPatternsInput, AnalyzeWatchPatternsOutput } from "@/ai/flows/analyze-watch-patterns";
-import type { UserWeights, ViewingHistoryEntry } from "./types";
+import type { UserWeights, ViewingHistoryEntry, ContentType } from "./types";
 
-interface FetchMovieRecommendationsParams {
+interface FetchContentRecommendationsParams {
   mood: string;
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
-  userWeights: UserWeights; // Though not directly used by current AI flow, pass it for potential future use or logging
+  userWeights: UserWeights;
+  contentType: ContentType;
 }
 
-export async function fetchMovieRecommendationsAction(
-  params: FetchMovieRecommendationsParams
-): Promise<GenerateMovieRecommendationsOutput | { error: string }> {
+export async function fetchContentRecommendationsAction(
+  params: FetchContentRecommendationsParams
+): Promise<GenerateContentRecommendationsOutput | { error: string }> {
   try {
     const viewingHistorySummary = params.viewingHistory.length > 0
       ? `User has watched: ${params.viewingHistory.map(m => `${m.title} (rated ${m.rating}/5)`).join(', ')}.`
       : "User has no viewing history yet.";
 
-    // Potentially incorporate userWeights into the prompt if the AI flow were designed for it.
-    // For now, the prompt in generate-movie-recommendations.ts handles the balancing.
-    // Example: Add a sentence like: "The user prioritizes these factors as follows: Mood (${params.userWeights.mood}%), Time (${params.userWeights.time}%), History (${params.userWeights.history}%)."
-    // This would require modifying the AI flow's prompt.
-
-    const input: GenerateMovieRecommendationsInput = {
+    const input: GenerateContentRecommendationsInput = {
       mood: params.mood,
       timeOfDay: params.timeOfDay,
       viewingHistory: viewingHistorySummary,
+      contentType: params.contentType,
     };
-    const recommendations = await generateMovieRecommendations(input);
+    const recommendations = await generateContentRecommendations(input);
     return recommendations;
   } catch (error) {
-    console.error("Error fetching movie recommendations:", error);
-    return { error: "Failed to fetch movie recommendations. Please try again." };
+    console.error("Error fetching content recommendations:", error);
+    return { error: "Failed to fetch content recommendations. Please try again." };
   }
 }
 

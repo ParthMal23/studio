@@ -1,16 +1,16 @@
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for generating personalized movie recommendations.
+ * @fileOverview This file defines a Genkit flow for generating personalized content recommendations (movies or TV series).
  *
- * - generateMovieRecommendations - A function that generates movie recommendations based on user mood, time of day, and viewing history.
- * - GenerateMovieRecommendationsInput - The input type for the generateMovieRecommendations function.
- * - GenerateMovieRecommendationsOutput - The output type for the generateMovieRecommendations function.
+ * - generateContentRecommendations - A function that generates recommendations based on user mood, time of day, viewing history, and content type preference.
+ * - GenerateContentRecommendationsInput - The input type for the generateContentRecommendations function.
+ * - GenerateContentRecommendationsOutput - The output type for the generateContentRecommendations function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateMovieRecommendationsInputSchema = z.object({
+const GenerateContentRecommendationsInputSchema = z.object({
   mood: z
     .string()
     .describe('The current mood of the user (e.g., happy, sad, relaxed).'),
@@ -20,60 +20,68 @@ const GenerateMovieRecommendationsInputSchema = z.object({
   viewingHistory: z
     .string()
     .describe('A summary of the user historical viewing data.'),
+  contentType: z
+    .enum(["MOVIES", "TV_SERIES", "BOTH"])
+    .describe('The type of content to recommend (MOVIES, TV_SERIES, or BOTH).'),
 });
-export type GenerateMovieRecommendationsInput = z.infer<
-  typeof GenerateMovieRecommendationsInputSchema
+export type GenerateContentRecommendationsInput = z.infer<
+  typeof GenerateContentRecommendationsInputSchema
 >;
 
-const MovieRecommendationSchema = z.object({
-  title: z.string().describe('The title of the movie.'),
-  description: z.string().describe('A brief description of the movie.'),
+const ContentRecommendationSchema = z.object({
+  title: z.string().describe('The title of the movie or TV series.'),
+  description: z.string().describe('A brief description of the movie or TV series.'),
   reason: z
     .string()
     .describe(
-      'The reason for recommending this movie based on the user\'s mood, time of day, and viewing history.'
+      'The reason for recommending this item based on the user\'s mood, time of day, viewing history, and content type preference.'
     ),
 });
 
-const GenerateMovieRecommendationsOutputSchema = z.array(
-  MovieRecommendationSchema
+const GenerateContentRecommendationsOutputSchema = z.array(
+  ContentRecommendationSchema
 );
 
-export type GenerateMovieRecommendationsOutput = z.infer<
-  typeof GenerateMovieRecommendationsOutputSchema
+export type GenerateContentRecommendationsOutput = z.infer<
+  typeof GenerateContentRecommendationsOutputSchema
 >;
 
-export async function generateMovieRecommendations(
-  input: GenerateMovieRecommendationsInput
-): Promise<GenerateMovieRecommendationsOutput> {
-  return generateMovieRecommendationsFlow(input);
+export async function generateContentRecommendations(
+  input: GenerateContentRecommendationsInput
+): Promise<GenerateContentRecommendationsOutput> {
+  return generateContentRecommendationsFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'generateMovieRecommendationsPrompt',
-  input: {schema: GenerateMovieRecommendationsInputSchema},
-  output: {schema: GenerateMovieRecommendationsOutputSchema},
-  prompt: `You are a movie recommendation expert. Generate a list of personalized movie recommendations based on the user's current mood, the time of day, and their viewing history.
+  name: 'generateContentRecommendationsPrompt',
+  input: {schema: GenerateContentRecommendationsInputSchema},
+  output: {schema: GenerateContentRecommendationsOutputSchema},
+  prompt: `You are a recommendation expert for movies and TV series. Generate a list of personalized {{{contentType}}} recommendations based on the user's current mood, the time of day, and their viewing history.
 
-  Consider the following information:
-  Mood: {{{mood}}}
-  Time of day: {{{timeOfDay}}}
-  Viewing history: {{{viewingHistory}}}
+If '{{{contentType}}}' is 'MOVIES', recommend only movies.
+If '{{{contentType}}}' is 'TV_SERIES', recommend only TV series.
+If '{{{contentType}}}' is 'BOTH', recommend a mix of movies and TV series.
 
-  Provide the movie recommendations with their title, a brief description, and a reason for the suggestion based on the user's current state (mood, time) and past history.
-  Each recommendation should have the following information:
-  - title: The title of the movie.
-  - description: A brief description of the movie.
-  - reason: The reason for recommending this movie based on the user's mood, time of day, and viewing history.
+Consider the following information:
+Mood: {{{mood}}}
+Time of day: {{{timeOfDay}}}
+Viewing history: {{{viewingHistory}}}
+Preferred content type: {{{contentType}}}
 
-  Return a JSON array of movie recommendations.`,
+Provide the recommendations with their title, a brief description, and a reason for the suggestion based on the user's current state (mood, time), past history, and preferred content type.
+Each recommendation should have the following information:
+- title: The title of the movie or TV series.
+- description: A brief description.
+- reason: The reason for recommending this.
+
+Return a JSON array of recommendations.`,
 });
 
-const generateMovieRecommendationsFlow = ai.defineFlow(
+const generateContentRecommendationsFlow = ai.defineFlow(
   {
-    name: 'generateMovieRecommendationsFlow',
-    inputSchema: GenerateMovieRecommendationsInputSchema,
-    outputSchema: GenerateMovieRecommendationsOutputSchema,
+    name: 'generateContentRecommendationsFlow',
+    inputSchema: GenerateContentRecommendationsInputSchema,
+    outputSchema: GenerateContentRecommendationsOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);

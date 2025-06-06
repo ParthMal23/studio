@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import type { ViewingHistoryEntry, WatchPatternAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload } from 'lucide-react';
+import Papa from 'papaparse';
 
 interface ViewingHistoryTrackerProps {
   viewingHistory: ViewingHistoryEntry[];
@@ -25,6 +26,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
   const [analysisResult, setAnalysisResult] = useState<WatchPatternAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddMovie = () => {
     if (!newMovieTitle.trim()) {
@@ -32,7 +34,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       return;
     }
     const newEntry: ViewingHistoryEntry = {
-      id: Date.now().toString(), // Simple unique ID
+      id: Date.now().toString(),
       title: newMovieTitle,
       rating: newMovieRating,
       completed: newMovieCompleted,
@@ -72,6 +74,53 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      toast({ title: "File Error", description: "No file selected.", variant: "destructive" });
+      return;
+    }
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+        toast({ title: "File Error", description: "Please upload a CSV file.", variant: "destructive" });
+        return;
+    }
+
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const newEntries: ViewingHistoryEntry[] = [];
+        results.data.forEach((row, index) => {
+          const title = row['Title'] || row['title']; // Common column names for title in Netflix CSV
+          if (title) {
+            newEntries.push({
+              id: `${Date.now()}-${index}`, // More robust unique ID
+              title: title.trim(),
+              rating: 3, // Default rating
+              completed: true, // Assume completed if in history
+            });
+          }
+        });
+
+        if (newEntries.length > 0) {
+          onHistoryChange([...viewingHistory, ...newEntries]);
+          toast({ title: "History Imported", description: `${newEntries.length} items imported from CSV.` });
+        } else {
+          toast({ title: "Import Info", description: "No new items found or 'Title' column missing in CSV.", variant: "default" });
+        }
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Reset file input
+        }
+      },
+      error: (error) => {
+        toast({ title: "CSV Parsing Error", description: error.message, variant: "destructive" });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Reset file input
+        }
+      },
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
@@ -79,11 +128,11 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <History className="h-6 w-6" /> Your Viewing History
           </CardTitle>
-          <CardDescription>Track movies you've watched to improve recommendations.</CardDescription>
+          <CardDescription>Track content you've watched to improve recommendations. You can add manually or import from a Netflix CSV.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="movie-title">Movie Title</Label>
+            <Label htmlFor="movie-title">Title</Label>
             <Input
               id="movie-title"
               value={newMovieTitle}
@@ -112,29 +161,41 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               <Label htmlFor="movie-completed">Completed?</Label>
             </div>
           </div>
-          <Button onClick={handleAddMovie} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-            <ListChecks className="mr-2 h-4 w-4" /> Add to History
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={handleAddMovie} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+              <ListChecks className="mr-2 h-4 w-4" /> Add Manually
+            </Button>
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1">
+              <Upload className="mr-2 h-4 w-4" /> Import Netflix CSV
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".csv"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </div>
         </CardContent>
       </Card>
 
       {viewingHistory.length > 0 && (
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline text-lg">Logged Movies</CardTitle>
+            <CardTitle className="font-headline text-lg">Logged Items</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
-              {viewingHistory.map((movie) => (
-                <li key={movie.id} className="flex justify-between items-center p-3 bg-secondary/50 rounded-md">
+              {viewingHistory.map((item) => (
+                <li key={item.id} className="flex justify-between items-center p-3 bg-secondary/50 rounded-md">
                   <div>
-                    <p className="font-semibold">{movie.title}</p>
+                    <p className="font-semibold">{item.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      Rating: {"⭐".repeat(movie.rating)}{" "}
-                      ({movie.completed ? "Completed" : "Not Completed"})
+                      Rating: {"⭐".repeat(item.rating)}{" "}
+                      ({item.completed ? "Completed" : "Not Completed"})
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveMovie(movie.id)} aria-label="Remove movie">
+                  <Button variant="ghost" size="icon" onClick={() => handleRemoveMovie(item.id)} aria-label="Remove item">
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </li>

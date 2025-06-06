@@ -3,6 +3,8 @@ export type Mood = "Happy" | "Sad" | "Relaxed" | "Excited" | "Calm" | "Adventuro
 
 export type TimeOfDay = "Morning" | "Afternoon" | "Evening" | "Night";
 
+export type ContentType = "MOVIES" | "TV_SERIES" | "BOTH";
+
 export interface UserWeights {
   mood: number; // 0-100
   time: number; // 0-100
@@ -16,7 +18,7 @@ export interface ViewingHistoryEntry {
   completed: boolean;
 }
 
-export interface MovieRecommendationItem {
+export interface MovieRecommendationItem { // Name kept for broader compatibility, but applies to TV series too
   title: string;
   description: string;
   reason: string;
