@@ -91,8 +91,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
             newEntries.push({
               id: `${Date.now()}-${index}`,
               title: title.trim(),
-              rating: 3,
-              completed: true,
+              rating: 3, // Default rating
+              completed: true, // Default completed status
             });
           }
         });
@@ -233,4 +233,3 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     </div>
   );
 }
-
