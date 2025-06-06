@@ -38,7 +38,6 @@ const ContentRecommendationSchema = z.object({
       'The reason for recommending this item based on the user\'s mood, time of day, viewing history, and content type preference.'
     ),
   platform: z.string().describe('The name of the OTT platform where this content is available (e.g., Netflix, Hulu, Amazon Prime Video).'),
-  platformUrl: z.string().url().nullable().optional().describe('A direct URL to watch the content, a valid search URL, or null if not available. The key can be omitted if no URL or null is appropriate. Must be a valid URL if provided and not null. Do NOT use empty strings or placeholder text like "N/A".'),
 });
 
 const GenerateContentRecommendationsOutputSchema = z.array(
@@ -77,24 +76,14 @@ Each recommendation must adhere to the following structure:
 - description: A brief description (string).
 - reason: The reason for recommending this (string).
 - platform: The name of the OTT platform (string).
-- platformUrl: Provide a direct URL to watch the content on the specified platform. If a direct URL is not easily found, you MAY provide a valid search URL on that platform for the title. If neither a direct URL nor a valid search URL is available or feasible, you MUST either set the value of platformUrl to null OR omit the platformUrl key entirely for that recommendation. It must be a valid URL if provided and not null. Do NOT use an empty string "" or placeholder text like 'N/A' for platformUrl.
 
 Return a JSON array of recommendations. Ensure the entire output is a valid JSON array.
-Example of a single item (if platformUrl is available):
+Example of a single item:
 {
   "title": "Example Movie",
   "description": "An exciting adventure.",
   "reason": "Matches your adventurous mood.",
-  "platform": "Netflix",
-  "platformUrl": "https://www.netflix.com/title/12345"
-}
-Example of a single item (if platformUrl is not available or not applicable):
-{
-  "title": "Another Example Show",
-  "description": "A thoughtful drama.",
-  "reason": "Good for a calm evening.",
-  "platform": "Hulu"
-  // platformUrl key is omitted OR "platformUrl": null
+  "platform": "Netflix"
 }
 `,
 });
@@ -108,12 +97,9 @@ const generateContentRecommendationsFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
     if (!output) {
-      // Handle cases where the AI might return an empty/nullish output
-      // that isn't caught by Zod schema validation but is undesirable.
       console.error('AI returned nullish output for recommendations');
       throw new Error('AI failed to provide recommendations.');
     }
     return output;
   }
 );
-

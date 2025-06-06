@@ -12,7 +12,6 @@ import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
 import { ViewingHistoryTracker } from '@/components/ViewingHistoryTracker';
-import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +21,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const LS_VIEWING_HISTORY_KEY = 'fireSyncViewingHistory';
 const LS_USER_PREFERENCES_KEY = 'fireSyncUserPreferences';
-const LS_PENDING_FEEDBACK_KEY = 'fireSyncPendingFeedbackItem';
 
 export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -37,9 +35,6 @@ export default function HomePage() {
   const [recommendations, setRecommendations] = useState<MovieRecommendationItem[]>([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
-
-  const [pendingFeedbackMovie, setPendingFeedbackMovie] = useState<MovieRecommendationItem | null>(null);
-  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
 
   const { toast } = useToast();
 
@@ -67,34 +62,24 @@ export default function HomePage() {
         console.error("Failed to parse preferences from localStorage", e);
       }
     }
-
-    const pendingItemJSON = localStorage.getItem(LS_PENDING_FEEDBACK_KEY);
-    if (pendingItemJSON) {
-      try {
-        const item = JSON.parse(pendingItemJSON) as MovieRecommendationItem;
-        setPendingFeedbackMovie(item);
-        setShowFeedbackDialog(true);
-      } catch (e) {
-        console.error("Failed to parse pending feedback item from localStorage", e);
-        localStorage.removeItem(LS_PENDING_FEEDBACK_KEY); // Clear corrupted item
-      }
-    }
   }, []);
 
   useEffect(() => {
     if (!isMounted) return;
     if (selectedTime === undefined && detectedTime !== undefined) {
       const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
-      let canSetFromDetectedTime = true;
       if (storedPreferences) {
         try {
           const prefs = JSON.parse(storedPreferences);
           if (prefs.hasOwnProperty('selectedTime') && prefs.selectedTime !== undefined) {
             // localStorage had a selectedTime, it should have been set.
+          } else {
+             setSelectedTime(detectedTime);
           }
-        } catch (e) { /* ignore */ }
-      }
-      if (canSetFromDetectedTime) {
+        } catch (e) { 
+           setSelectedTime(detectedTime);
+        }
+      } else {
         setSelectedTime(detectedTime);
       }
     }
@@ -136,31 +121,8 @@ export default function HomePage() {
   };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {
-    if (movie.platformUrl) { // Only store if it's an external link they might watch
-        localStorage.setItem(LS_PENDING_FEEDBACK_KEY, JSON.stringify(movie));
-    }
-  };
-
-  const handleFeedbackSubmit = (watched: boolean, rating?: number, completed?: boolean) => {
-    if (pendingFeedbackMovie && watched && rating !== undefined && completed !== undefined) {
-      const newEntry: ViewingHistoryEntry = {
-        id: Date.now().toString(),
-        title: pendingFeedbackMovie.title,
-        rating: rating,
-        completed: completed,
-      };
-      setViewingHistory(prev => [...prev, newEntry]);
-      toast({ title: "History Updated", description: `${pendingFeedbackMovie.title} added with your feedback.` });
-    }
-    localStorage.removeItem(LS_PENDING_FEEDBACK_KEY);
-    setShowFeedbackDialog(false);
-    setPendingFeedbackMovie(null);
-  };
-
-  const handleFeedbackDismiss = () => {
-    localStorage.removeItem(LS_PENDING_FEEDBACK_KEY);
-    setShowFeedbackDialog(false);
-    setPendingFeedbackMovie(null);
+    // Placeholder for future interaction, e.g., showing more details
+    // console.log("Card clicked:", movie.title);
   };
 
   return (
@@ -211,14 +173,6 @@ export default function HomePage() {
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
         FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Content Guide
       </footer>
-      {isMounted && pendingFeedbackMovie && (
-        <FeedbackDialog
-          isOpen={showFeedbackDialog}
-          movie={pendingFeedbackMovie}
-          onSubmit={handleFeedbackSubmit}
-          onDismiss={handleFeedbackDismiss}
-        />
-      )}
     </div>
   );
 }

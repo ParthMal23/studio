@@ -23,7 +23,6 @@ export interface MovieRecommendationItem { // Name kept for broader compatibilit
   description: string;
   reason: string;
   platform: string; // e.g., "Netflix", "Hulu"
-  platformUrl?: string; // Optional direct URL to the content
 }
 
 export interface WatchPatternAnalysis {
