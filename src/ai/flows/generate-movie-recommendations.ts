@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for generating personalized content recommendations (movies or TV series).
@@ -37,7 +38,7 @@ const ContentRecommendationSchema = z.object({
       'The reason for recommending this item based on the user\'s mood, time of day, viewing history, and content type preference.'
     ),
   platform: z.string().describe('The name of the OTT platform where this content is available (e.g., Netflix, Hulu, Amazon Prime Video).'),
-  platformUrl: z.string().url().optional().describe('A direct URL to watch the content on the specified platform. If unknown or not applicable, this can be omitted.'),
+  platformUrl: z.string().url().nullish().describe('A direct URL to watch the content, a valid search URL, or null/omitted if not available. Must be a valid URL if provided.'),
 });
 
 const GenerateContentRecommendationsOutputSchema = z.array(
@@ -70,13 +71,13 @@ Time of day: {{{timeOfDay}}}
 Viewing history: {{{viewingHistory}}}
 Preferred content type: {{{contentType}}}
 
-Provide the recommendations with their title, a brief description, the reason for the suggestion, the OTT platform it's available on (e.g., Netflix, Amazon Prime, Hulu), and a direct URL to the content on that platform if available.
+Provide the recommendations with their title, a brief description, the reason for the suggestion, and the OTT platform it's available on (e.g., Netflix, Amazon Prime, Hulu).
 Each recommendation should have the following information:
 - title: The title of the movie or TV series.
 - description: A brief description.
 - reason: The reason for recommending this.
 - platform: The name of the OTT platform.
-- platformUrl: The direct URL to the content on the platform. If a direct URL is not easily found, provide a search URL on that platform for the title, or omit if not feasible.
+- platformUrl: Provide a direct URL to watch the content on the specified platform. If a direct URL is not easily found, you MAY provide a valid search URL on that platform for the title. If neither a direct URL nor a valid search URL is available or feasible, set platformUrl to null or omit the platformUrl key entirely for that recommendation. Do NOT use an empty string or placeholder text like 'N/A' for platformUrl.
 
 Return a JSON array of recommendations.`,
 });
@@ -92,3 +93,4 @@ const generateContentRecommendationsFlow = ai.defineFlow(
     return output!;
   }
 );
+
