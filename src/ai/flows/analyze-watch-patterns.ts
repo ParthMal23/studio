@@ -21,17 +21,19 @@ const AnalyzeWatchPatternsInputSchema = z.object({
 });
 export type AnalyzeWatchPatternsInput = z.infer<typeof AnalyzeWatchPatternsInputSchema>;
 
+const ContentMixItemSchema = z.object({
+  genre: z.string().describe("The genre of content (e.g., 'comedy', 'drama')."),
+  proportion: z.number().min(0).max(1).describe("The suggested proportion for this genre, as a NUMBER between 0 and 1 (e.g., 0.6 for 60%).")
+});
+
 const AnalyzeWatchPatternsOutputSchema = z.object({
   explanation: z.string().describe("An explanation of the analysis and suggestions. This field is mandatory."),
   moodWeight: z.number().min(0).max(100)
     .describe("The suggested influence of mood on recommendations, as a NUMBER between 0 and 100 (percentage). If no specific suggestion, use 50. This field is mandatory."),
   historyWeight: z.number().min(0).max(100)
     .describe("The suggested influence of viewing history on recommendations, as a NUMBER between 0 and 100 (percentage). If no specific suggestion, use 50. This field is mandatory."),
-  contentMix: z.record(
-      z.string(), // Keys are strings (genres)
-      z.number().min(0).max(1) // Values are numbers between 0 and 1
-    )
-  .describe("A suggested mix of content genres/types, where keys are genre strings and values are NUMBERS between 0 and 1 (e.g., comedy: 0.6, drama: 0.4), ideally summing to 1. If no specific content mix is applicable, return an empty object {}. This field is mandatory.")
+  contentMix: z.array(ContentMixItemSchema)
+    .describe("A suggested mix of content genres as an ARRAY of objects. Each object must have a 'genre' (string) and 'proportion' (NUMBER between 0 and 1). If no specific content mix is applicable, return an empty array []. This field is mandatory.")
 });
 export type AnalyzeWatchPatternsOutput = z.infer<typeof AnalyzeWatchPatternsOutputSchema>;
 
@@ -44,11 +46,11 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   input: {schema: AnalyzeWatchPatternsInputSchema},
   output: {schema: AnalyzeWatchPatternsOutputSchema},
   prompt: `You are an expert in movie recommendation systems. Analyze the user's viewing history, current mood, and time of day.
-  Based on this analysis, you MUST provide:
+  Based on this analysis, you MUST provide a direct JSON object with the following fields:
   1. 'explanation': An explanation of your reasoning (string, MANDATORY).
   2. 'moodWeight': Suggested influence of mood as a NUMBER between 0 and 100 (percentage, MANDATORY). If you don't have a specific suggestion, use 50 as a default.
   3. 'historyWeight': Suggested influence of viewing history as a NUMBER between 0 and 100 (percentage, MANDATORY). If you don't have a specific suggestion, use 50 as a default.
-  4. 'contentMix': A suggested mix of content genres as an object where keys are genre strings and values are NUMBERS between 0 and 1 (proportions, e.g., comedy: 0.6, drama: 0.4), ideally summing to 1. If no specific content mix is applicable, return an empty object {} for this field. This field is MANDATORY.
+  4. 'contentMix': A suggested mix of content genres as an ARRAY of objects. Each object in the array must have a 'genre' (string) and a 'proportion' (NUMBER between 0 and 1, e.g., 0.6 for 60%). The proportions should ideally sum to 1. If no specific content mix is applicable, return an empty array [] for this field. This field is MANDATORY.
 
   Viewing History: {{{viewingHistory}}}
   Current Mood: {{{currentMood}}}
@@ -61,11 +63,11 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
     "explanation": "Given the user's high ratings for recent comedies and their current 'Happy' mood, comedy recommendations should be prioritized. Suggesting mood influence at 70% and history at 20%.",
     "moodWeight": 70,
     "historyWeight": 20,
-    "contentMix": {
-      "comedy": 0.6,
-      "action": 0.3,
-      "documentary": 0.1
-    }
+    "contentMix": [
+      {"genre": "comedy", "proportion": 0.6},
+      {"genre": "action", "proportion": 0.3},
+      {"genre": "documentary", "proportion": 0.1}
+    ]
   }
 
   Example of a valid JSON output with default weights and no specific content mix:
@@ -73,10 +75,10 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
     "explanation": "User has very little history, so focus on mood. No specific content mix can be derived yet. Using default weights.",
     "moodWeight": 50,
     "historyWeight": 50,
-    "contentMix": {}
+    "contentMix": []
   }
 
-  Ensure the JSON is valid and all specified fields are present with the correct numeric types.
+  Ensure the JSON is valid and all specified fields are present with the correct numeric types and array structure for contentMix.
   `,
 });
 
@@ -90,10 +92,8 @@ const analyzeWatchPatternsFlow = ai.defineFlow(
     const {output} = await analyzeWatchPatternsPrompt(input);
     if (!output) {
       console.error('AI returned nullish output for watch pattern analysis.');
-      // Zod will catch if mandatory fields are missing, but this handles a complete lack of output.
       throw new Error('AI returned no output. All fields (explanation, moodWeight, historyWeight, contentMix) are mandatory.');
     }
-    // Zod validation will ensure all mandatory fields are present and correctly typed.
     return output;
   }
 );

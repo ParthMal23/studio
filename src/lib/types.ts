@@ -26,8 +26,8 @@ export interface MovieRecommendationItem {
 }
 
 export interface WatchPatternAnalysis {
-  explanation?: string;
-  moodWeight?: number; // Percentage 0-100
-  historyWeight?: number; // Percentage 0-100
-  contentMix?: Record<string, number>; // Proportions e.g., { "comedy": 0.6 }
+  explanation: string;
+  moodWeight: number; // Percentage 0-100
+  historyWeight: number; // Percentage 0-100
+  contentMix: Array<{ genre: string; proportion: number }>; // e.g., [{ genre: "comedy", proportion: 0.6 }]
 }

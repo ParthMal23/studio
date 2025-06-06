@@ -64,7 +64,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     if ('error' in result) {
       toast({ title: "Analysis Failed", description: result.error, variant: "destructive" });
     } else {
-      setAnalysisResult(result); // result is now the direct WatchPatternAnalysis object
+      setAnalysisResult(result);
       toast({ title: "Analysis Complete", description: "Watch patterns analyzed successfully." });
     }
   };
@@ -217,15 +217,18 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
             {analysisResult.explanation && <p><span className="font-semibold">Explanation:</span> {analysisResult.explanation}</p>}
             {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight:</span> {analysisResult.moodWeight}%</p>}
             {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight:</span> {analysisResult.historyWeight}%</p>}
-            {analysisResult.contentMix && Object.keys(analysisResult.contentMix).length > 0 && (
+            {analysisResult.contentMix && analysisResult.contentMix.length > 0 && (
               <div>
                 <p className="font-semibold">Suggested Content Mix:</p>
                 <ul className="list-disc list-inside ml-4">
-                  {Object.entries(analysisResult.contentMix).map(([genre, proportion]) => (
-                    <li key={genre}>{genre}: {(proportion * 100).toFixed(0)}%</li>
+                  {analysisResult.contentMix.map((item) => (
+                    <li key={item.genre}>{item.genre}: {(item.proportion * 100).toFixed(0)}%</li>
                   ))}
                 </ul>
               </div>
+            )}
+             {analysisResult.contentMix && analysisResult.contentMix.length === 0 && (
+                <p><span className="font-semibold">Suggested Content Mix:</span> No specific mix suggested.</p>
             )}
           </CardContent>
         </Card>
