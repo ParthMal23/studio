@@ -215,8 +215,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {analysisResult.explanation && <p><span className="font-semibold">Explanation:</span> {analysisResult.explanation}</p>}
-            {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight Factor:</span> {analysisResult.moodWeight.toFixed(2)}</p>}
-            {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight Factor:</span> {analysisResult.historyWeight.toFixed(2)}</p>}
+            {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight:</span> {analysisResult.moodWeight}%</p>}
+            {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight:</span> {analysisResult.historyWeight}%</p>}
             {analysisResult.contentMix && (
               <div>
                 <p className="font-semibold">Suggested Content Mix:</p>

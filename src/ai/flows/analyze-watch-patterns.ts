@@ -23,31 +23,15 @@ export type AnalyzeWatchPatternsInput = z.infer<typeof AnalyzeWatchPatternsInput
 
 const AnalyzeWatchPatternsOutputSchema = z.object({
   explanation: z.string().optional().describe("An explanation of the analysis and suggestions."),
-  moodWeight: z.preprocess(
-      (val) => (typeof val === 'string' ? parseFloat(val) : val),
-      z.number().optional()
-    ).describe("The suggested influence of mood on recommendations, as a numeric factor (e.g., 1.2 for 20% increase, 0.8 for 20% decrease). This must be a number."),
-  historyWeight: z.preprocess(
-      (val) => (typeof val === 'string' ? parseFloat(val) : val),
-      z.number().optional()
-    ).describe("The suggested influence of viewing history on recommendations, as a numeric factor. This must be a number."),
-  contentMix: z.preprocess(
-    (val) => {
-      if (typeof val === 'object' && val !== null) {
-        const newObj: Record<string, any> = {};
-        for (const key in val) {
-          // @ts-ignore
-          newObj[key] = typeof val[key] === 'string' ? parseFloat(val[key]) : val[key];
-        }
-        return newObj;
-      }
-      return val;
-    },
-    z.record(
+  moodWeight: z.number().min(0).max(100).optional()
+    .describe("The suggested influence of mood on recommendations, as a percentage (0-100). This must be a number."),
+  historyWeight: z.number().min(0).max(100).optional()
+    .describe("The suggested influence of viewing history on recommendations, as a percentage (0-100). This must be a number."),
+  contentMix: z.record(
       z.string(), // Keys are strings (genres)
       z.number().min(0).max(1) // Values are numbers between 0 and 1
     ).optional()
-  ).describe("A suggested mix of content genres/types, where values are numeric proportions (e.g., comedy: 0.6, drama: 0.4), summing to 1. All values must be numbers.")
+  .describe("A suggested mix of content genres/types, where values are numeric proportions (e.g., comedy: 0.6, drama: 0.4), summing to 1. All values must be numbers between 0 and 1.")
 });
 export type AnalyzeWatchPatternsOutput = z.infer<typeof AnalyzeWatchPatternsOutputSchema>;
 
@@ -62,8 +46,8 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   prompt: `You are an expert in movie recommendation systems. Analyze the user's viewing history, current mood, and time of day.
   Based on this analysis, provide:
   1. An explanation of your reasoning (string, optional).
-  2. Suggested numeric factors for how 'mood' (moodWeight) and 'viewing history' (historyWeight) could influence recommendations. These must be NUMBERS (e.g., 1.1, 0.9). (optional)
-  3. A suggested content mix (contentMix) (e.g., by genre or type like movies/series), where keys are genre strings and values are NUMBERS between 0 and 1, summing to 1. (optional)
+  2. Suggested 'moodWeight' and 'historyWeight' as percentages (NUMBERS between 0 and 100) that could influence recommendations. (optional)
+  3. A suggested 'contentMix' (e.g., by genre), where keys are genre strings and values are NUMBERS between 0 and 1, ideally summing to 1. (optional)
 
   Viewing History: {{{viewingHistory}}}
   Current Mood: {{{currentMood}}}
@@ -72,25 +56,25 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   Return a direct JSON object matching the output schema.
   Example of a valid JSON output:
   {
-    "explanation": "Given the user's high ratings for recent comedies and their current 'Happy' mood, comedy recommendations should be prioritized. Consider increasing mood influence.",
-    "moodWeight": 1.15,
-    "historyWeight": 1.05,
+    "explanation": "Given the user's high ratings for recent comedies and their current 'Happy' mood, comedy recommendations should be prioritized. Suggesting mood influence at 70% and history at 20%.",
+    "moodWeight": 70,
+    "historyWeight": 20,
     "contentMix": {
-      "comedy": 0.7,
-      "action": 0.2,
+      "comedy": 0.6,
+      "action": 0.3,
       "documentary": 0.1
     }
   }
 
   Another valid example (if some fields are not applicable):
   {
-    "explanation": "User has very little history, focus on mood.",
-    "moodWeight": 1.2
+    "explanation": "User has very little history, focus on mood. Suggest mood influence at 80%.",
+    "moodWeight": 80
   }
 
   Ensure the JSON is valid and all fields adhere to their descriptions in the output schema.
-  Values for moodWeight, historyWeight, and within contentMix MUST be numbers, not strings.
-  The values in contentMix must be NUMBERS between 0 and 1, and their sum should ideally be 1.
+  Values for moodWeight and historyWeight MUST be numbers between 0 and 100.
+  The values in contentMix must be NUMBERS between 0 and 1.
   `,
 });
 
@@ -103,13 +87,9 @@ const analyzeWatchPatternsFlow = ai.defineFlow(
   async input => {
     const {output} = await analyzeWatchPatternsPrompt(input);
     if (!output) {
-      // This case should ideally be caught by Zod if the output schema doesn't allow undefined/null,
-      // but as an extra safeguard:
       console.error('AI returned nullish output for watch pattern analysis.');
       throw new Error('AI returned no output for watch pattern analysis.');
     }
-    // The output is already validated by Zod through the definePrompt configuration.
     return output;
   }
 );
-
