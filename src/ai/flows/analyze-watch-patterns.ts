@@ -22,7 +22,7 @@ const AnalyzeWatchPatternsInputSchema = z.object({
 export type AnalyzeWatchPatternsInput = z.infer<typeof AnalyzeWatchPatternsInputSchema>;
 
 const AnalyzeWatchPatternsOutputSchema = z.object({
-  explanation: z.string().optional().describe("An explanation of the analysis and suggestions."),
+  explanation: z.string().describe("An explanation of the analysis and suggestions. This field is mandatory."),
   moodWeight: z.number().min(0).max(100).optional()
     .describe("The suggested influence of mood on recommendations, as a percentage (a NUMBER between 0 and 100). Example: 70 for 70%."),
   historyWeight: z.number().min(0).max(100).optional()
@@ -45,10 +45,10 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   output: {schema: AnalyzeWatchPatternsOutputSchema},
   prompt: `You are an expert in movie recommendation systems. Analyze the user's viewing history, current mood, and time of day.
   Based on this analysis, provide:
-  1. An explanation of your reasoning (string, optional).
-  2. Suggested 'moodWeight': a NUMBER between 0 and 100 representing the percentage influence of mood. (optional)
-  3. Suggested 'historyWeight': a NUMBER between 0 and 100 representing the percentage influence of viewing history. (optional)
-  4. A suggested 'contentMix': an object where keys are genre strings and values are NUMBERS between 0 and 1, representing proportions (e.g., comedy: 0.6 means 60%). These proportions should ideally sum to 1. (optional)
+  1. 'explanation': An explanation of your reasoning (string, MANDATORY). If other fields are not applicable, explain why.
+  2. 'moodWeight': Suggested influence of mood as a NUMBER between 0 and 100 (percentage, optional).
+  3. 'historyWeight': Suggested influence of viewing history as a NUMBER between 0 and 100 (percentage, optional).
+  4. 'contentMix': A suggested mix of content genres as an object where keys are genre strings and values are NUMBERS between 0 and 1 (proportions, optional). These proportions should ideally sum to 1.
 
   Viewing History: {{{viewingHistory}}}
   Current Mood: {{{currentMood}}}
@@ -67,14 +67,20 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
     }
   }
 
-  Another valid example (if some fields are not applicable):
+  Another valid example (if some fields are not applicable by the AI):
   {
-    "explanation": "User has very little history, focus on mood. Suggest mood influence at 80%.",
+    "explanation": "User has very little history, so focus on mood. No specific content mix can be derived yet.",
     "moodWeight": 80
   }
+  
+  A minimal valid example:
+  {
+    "explanation": "Insufficient data to provide detailed suggestions."
+  }
 
-  Ensure the JSON is valid. All weight fields (moodWeight, historyWeight) MUST be NUMBERS between 0 and 100.
-  The values in contentMix (e.g., 0.6 for comedy) MUST be NUMBERS between 0 and 1.
+  Ensure the JSON is valid. The 'explanation' field MUST be present.
+  All weight fields (moodWeight, historyWeight) when present MUST be NUMBERS between 0 and 100.
+  The values in contentMix (e.g., 0.6 for comedy) when present MUST be NUMBERS between 0 and 1.
   `,
 });
 
@@ -88,12 +94,12 @@ const analyzeWatchPatternsFlow = ai.defineFlow(
     const {output} = await analyzeWatchPatternsPrompt(input);
     if (!output) {
       console.error('AI returned nullish output for watch pattern analysis.');
-      // Consider throwing an error or returning a default/error structure
-      // that matches AnalyzeWatchPatternsOutputSchema if critical fields are missing.
-      // For now, we rely on Zod to catch issues if output is partially formed but present.
-      // If output itself is null/undefined, Zod won't run.
-      throw new Error('AI returned no output for watch pattern analysis.');
+      // This case should ideally be caught by Zod if the output doesn't match the schema (e.g. missing mandatory 'explanation').
+      // However, if the AI returns absolutely nothing, this check is useful.
+      throw new Error('AI returned no output for watch pattern analysis. Explanation field is mandatory.');
     }
-    return output; // Zod will validate this output based on AnalyzeWatchPatternsOutputSchema
+    // Zod will validate that 'explanation' is present and other fields match their types.
+    return output;
   }
 );
+
