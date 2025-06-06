@@ -23,15 +23,15 @@ export type AnalyzeWatchPatternsInput = z.infer<typeof AnalyzeWatchPatternsInput
 
 const AnalyzeWatchPatternsOutputSchema = z.object({
   explanation: z.string().describe("An explanation of the analysis and suggestions. This field is mandatory."),
-  moodWeight: z.number().min(0).max(100).optional()
-    .describe("The suggested influence of mood on recommendations, as a percentage (a NUMBER between 0 and 100). Example: 70 for 70%."),
-  historyWeight: z.number().min(0).max(100).optional()
-    .describe("The suggested influence of viewing history on recommendations, as a percentage (a NUMBER between 0 and 100). Example: 20 for 20%."),
+  moodWeight: z.number().min(0).max(100)
+    .describe("The suggested influence of mood on recommendations, as a NUMBER between 0 and 100 (percentage). If no specific suggestion, use 50. This field is mandatory."),
+  historyWeight: z.number().min(0).max(100)
+    .describe("The suggested influence of viewing history on recommendations, as a NUMBER between 0 and 100 (percentage). If no specific suggestion, use 50. This field is mandatory."),
   contentMix: z.record(
       z.string(), // Keys are strings (genres)
       z.number().min(0).max(1) // Values are numbers between 0 and 1
     )
-  .describe("A suggested mix of content genres/types, where keys are genre strings and values are NUMBERS between 0 and 1 (e.g., comedy: 0.6, drama: 0.4), ideally summing to 1. If no specific content mix is applicable, return an empty object {}.")
+  .describe("A suggested mix of content genres/types, where keys are genre strings and values are NUMBERS between 0 and 1 (e.g., comedy: 0.6, drama: 0.4), ideally summing to 1. If no specific content mix is applicable, return an empty object {}. This field is mandatory.")
 });
 export type AnalyzeWatchPatternsOutput = z.infer<typeof AnalyzeWatchPatternsOutputSchema>;
 
@@ -44,18 +44,19 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   input: {schema: AnalyzeWatchPatternsInputSchema},
   output: {schema: AnalyzeWatchPatternsOutputSchema},
   prompt: `You are an expert in movie recommendation systems. Analyze the user's viewing history, current mood, and time of day.
-  Based on this analysis, provide:
-  1. 'explanation': An explanation of your reasoning (string, MANDATORY). If other fields are not applicable, explain why.
-  2. 'moodWeight': Suggested influence of mood as a NUMBER between 0 and 100 (percentage, optional).
-  3. 'historyWeight': Suggested influence of viewing history as a NUMBER between 0 and 100 (percentage, optional).
-  4. 'contentMix': A suggested mix of content genres as an object where keys are genre strings and values are NUMBERS between 0 and 1 (proportions, e.g., comedy: 0.6, drama: 0.4), ideally summing to 1. If no specific content mix is applicable, return an empty object {} for this field. This field is MANDATORY (even if empty).
+  Based on this analysis, you MUST provide:
+  1. 'explanation': An explanation of your reasoning (string, MANDATORY).
+  2. 'moodWeight': Suggested influence of mood as a NUMBER between 0 and 100 (percentage, MANDATORY). If you don't have a specific suggestion, use 50 as a default.
+  3. 'historyWeight': Suggested influence of viewing history as a NUMBER between 0 and 100 (percentage, MANDATORY). If you don't have a specific suggestion, use 50 as a default.
+  4. 'contentMix': A suggested mix of content genres as an object where keys are genre strings and values are NUMBERS between 0 and 1 (proportions, e.g., comedy: 0.6, drama: 0.4), ideally summing to 1. If no specific content mix is applicable, return an empty object {} for this field. This field is MANDATORY.
 
   Viewing History: {{{viewingHistory}}}
   Current Mood: {{{currentMood}}}
   Current Time: {{{currentTime}}}
 
-  Return a direct JSON object matching the output schema.
-  Example of a valid JSON output:
+  Return a direct JSON object matching the output schema. All fields ('explanation', 'moodWeight', 'historyWeight', 'contentMix') are mandatory.
+
+  Example of a valid JSON output with specific suggestions:
   {
     "explanation": "Given the user's high ratings for recent comedies and their current 'Happy' mood, comedy recommendations should be prioritized. Suggesting mood influence at 70% and history at 20%.",
     "moodWeight": 70,
@@ -67,22 +68,15 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
     }
   }
 
-  Another valid example (if some fields are not applicable by the AI):
+  Example of a valid JSON output with default weights and no specific content mix:
   {
-    "explanation": "User has very little history, so focus on mood. No specific content mix can be derived yet.",
-    "moodWeight": 80,
-    "contentMix": {}
-  }
-  
-  A minimal valid example:
-  {
-    "explanation": "Insufficient data to provide detailed suggestions.",
+    "explanation": "User has very little history, so focus on mood. No specific content mix can be derived yet. Using default weights.",
+    "moodWeight": 50,
+    "historyWeight": 50,
     "contentMix": {}
   }
 
-  Ensure the JSON is valid. The 'explanation' and 'contentMix' (even if empty as {}) fields MUST be present.
-  All weight fields (moodWeight, historyWeight) when present MUST be NUMBERS between 0 and 100.
-  The values in contentMix (e.g., 0.6 for comedy) when present MUST be NUMBERS between 0 and 1.
+  Ensure the JSON is valid and all specified fields are present with the correct numeric types.
   `,
 });
 
@@ -96,12 +90,10 @@ const analyzeWatchPatternsFlow = ai.defineFlow(
     const {output} = await analyzeWatchPatternsPrompt(input);
     if (!output) {
       console.error('AI returned nullish output for watch pattern analysis.');
-      // This case should ideally be caught by Zod if the output doesn't match the schema (e.g. missing mandatory 'explanation' or 'contentMix').
-      // However, if the AI returns absolutely nothing, this check is useful.
-      throw new Error('AI returned no output for watch pattern analysis. Explanation and contentMix fields are mandatory.');
+      // Zod will catch if mandatory fields are missing, but this handles a complete lack of output.
+      throw new Error('AI returned no output. All fields (explanation, moodWeight, historyWeight, contentMix) are mandatory.');
     }
-    // Zod will validate that 'explanation' and 'contentMix' are present and other fields match their types.
+    // Zod validation will ensure all mandatory fields are present and correctly typed.
     return output;
   }
 );
-
