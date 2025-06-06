@@ -26,15 +26,13 @@ export async function fetchContentRecommendationsAction(
       timeOfDay: params.timeOfDay,
       viewingHistory: viewingHistorySummary,
       contentType: params.contentType,
-      // Pass userWeights if the AI model is to be made aware of them.
-      // For now, userWeights are primarily a client-side concept guiding the prompt or future logic.
-      // userPreferenceWeights: JSON.stringify(params.userWeights),
     };
     const recommendations = await generateContentRecommendations(input);
-    return recommendations;
+    return recommendations || []; // Ensure an array is always returned
   } catch (error) {
     console.error("Error fetching content recommendations:", error);
-    return { error: "Failed to fetch content recommendations. Please try again." };
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { error: `Failed to fetch content recommendations: ${errorMessage}` };
   }
 }
 
@@ -46,18 +44,20 @@ interface AnalyzeWatchPatternsParams {
 
 export async function analyzeWatchPatternsAction(
   params: AnalyzeWatchPatternsParams
-): Promise<AnalyzeWatchPatternsOutput | { error: string }> { // Changed return type to AnalyzeWatchPatternsOutput
+): Promise<AnalyzeWatchPatternsOutput | { error: string }> {
   try {
     const input: AnalyzeWatchPatternsInput = {
       viewingHistory: JSON.stringify(params.viewingHistory),
       currentMood: params.currentMood,
       currentTime: params.currentTime,
     };
-    // The analyzeWatchPatterns flow now directly returns the structured object
     const analysis = await analyzeWatchPatterns(input);
+    // The analyzeWatchPatterns flow now directly returns the structured object
+    // validated by Zod.
     return analysis;
   } catch (error) {
     console.error("Error analyzing watch patterns:", error);
-    return { error: "Failed to analyze watch patterns. Please try again." };
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { error: `Failed to analyze watch patterns: ${errorMessage}` };
   }
 }

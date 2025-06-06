@@ -18,16 +18,16 @@ export interface ViewingHistoryEntry {
   completed: boolean;
 }
 
-export interface MovieRecommendationItem { // Name kept for broader compatibility, but applies to TV series too
+export interface MovieRecommendationItem {
   title: string;
   description: string;
   reason: string;
-  platform: string; // e.g., "Netflix", "Hulu"
+  platform: string;
 }
 
 export interface WatchPatternAnalysis {
-  moodWeight?: number;
-  historyWeight?: number;
-  contentMix?: Record<string, number>;
   explanation?: string;
+  moodWeight?: number; // Percentage 0-100
+  historyWeight?: number; // Percentage 0-100
+  contentMix?: Record<string, number>; // Proportions e.g., { "comedy": 0.6 }
 }
