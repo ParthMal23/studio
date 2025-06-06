@@ -96,10 +96,8 @@ const generateContentRecommendationsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    if (!output) {
-      console.error('AI returned nullish output for recommendations');
-      throw new Error('AI failed to provide recommendations.');
-    }
-    return output;
+    // Ensure that if output is nullish (and Zod didn't throw), we return an empty array.
+    return output || [];
   }
 );
+

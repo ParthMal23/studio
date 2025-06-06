@@ -23,19 +23,10 @@ export type AnalyzeWatchPatternsInput = z.infer<typeof AnalyzeWatchPatternsInput
 
 const AnalyzeWatchPatternsOutputSchema = z.object({
   explanation: z.string().optional().describe("An explanation of the analysis and suggestions."),
-  moodWeight: z.preprocess(
-    (val) => (typeof val === 'string' ? parseFloat(val) : val),
-    z.number().min(0).max(100)
-  ).optional().describe("The suggested influence of mood on recommendations, as an absolute percentage (0-100)."),
-  historyWeight: z.preprocess(
-    (val) => (typeof val === 'string' ? parseFloat(val) : val),
-    z.number().min(0).max(100)
-  ).optional().describe("The suggested influence of viewing history on recommendations, as an absolute percentage (0-100)."),
+  moodWeight: z.number().optional().describe("The suggested influence of mood on recommendations, as a numeric factor (e.g., 1.2 for 20% increase, 0.8 for 20% decrease)."),
+  historyWeight: z.number().optional().describe("The suggested influence of viewing history on recommendations, as a numeric factor."),
   contentMix: z.record(
-    z.preprocess(
-      (val) => (typeof val === 'string' ? parseFloat(val) : val),
-      z.number().min(0).max(1)
-    )
+    z.number().min(0).max(1) // Proportions should still be 0-1
   ).optional().describe("A suggested mix of content genres/types, where values are numeric proportions (e.g., comedy: 0.6, drama: 0.4), summing to 1.")
 });
 export type AnalyzeWatchPatternsOutput = z.infer<typeof AnalyzeWatchPatternsOutputSchema>;
@@ -51,7 +42,7 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   prompt: `You are an expert in movie recommendation systems. Analyze the user's viewing history, current mood, and time of day.
   Based on this analysis, provide:
   1. An explanation of your reasoning.
-  2. Suggested absolute percentage weights (NUMBERS between 0 and 100, do NOT include '%' symbol) for how much 'mood' and 'viewing history' should influence recommendations.
+  2. Suggested numeric factors for how 'mood' and 'viewing history' could influence recommendations (e.g., a factor of 1.1 suggests a 10% increase in influence, 0.9 suggests a 10% decrease).
   3. A suggested content mix (e.g., by genre or type like movies/series), where proportions are NUMBERS between 0 and 1 and sum to 1.
 
   Viewing History: {{{viewingHistory}}}
@@ -61,9 +52,9 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
   Return a direct JSON object matching the output schema.
   Example:
   {
-    "explanation": "Given the user's high ratings for recent comedies and their current 'Happy' mood, comedy recommendations should be prioritized. History shows a strong preference for movies over TV series.",
-    "moodWeight": 75,
-    "historyWeight": 60,
+    "explanation": "Given the user's high ratings for recent comedies and their current 'Happy' mood, comedy recommendations should be prioritized. Consider increasing mood influence.",
+    "moodWeight": 1.15,
+    "historyWeight": 1.05,
     "contentMix": {
       "comedy": 0.7,
       "action": 0.2,
@@ -71,7 +62,7 @@ const analyzeWatchPatternsPrompt = ai.definePrompt({
     }
   }
 
-  Ensure the JSON is valid and all fields adhere to their descriptions in the output schema. The moodWeight and historyWeight must be NUMBERS between 0 and 100.
+  Ensure the JSON is valid and all fields adhere to their descriptions in the output schema.
   The values in contentMix must be NUMBERS between 0 and 1, and their sum should ideally be 1.
   `,
 });

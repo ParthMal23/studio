@@ -64,7 +64,6 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     if ('error' in result) {
       toast({ title: "Analysis Failed", description: result.error, variant: "destructive" });
     } else {
-      // result is now directly the WatchPatternAnalysis object
       setAnalysisResult(result);
       toast({ title: "Analysis Complete", description: "Watch patterns analyzed successfully." });
     }
@@ -87,13 +86,13 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       complete: (results) => {
         const newEntries: ViewingHistoryEntry[] = [];
         results.data.forEach((row, index) => {
-          const title = row['Title'] || row['title']; 
+          const title = row['Title'] || row['title'];
           if (title) {
             newEntries.push({
-              id: `${Date.now()}-${index}`, 
+              id: `${Date.now()}-${index}`,
               title: title.trim(),
-              rating: 3, 
-              completed: true, 
+              rating: 3,
+              completed: true,
             });
           }
         });
@@ -105,13 +104,13 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           toast({ title: "Import Info", description: "No new items found or 'Title' column missing in CSV.", variant: "default" });
         }
         if (fileInputRef.current) {
-          fileInputRef.current.value = ""; 
+          fileInputRef.current.value = "";
         }
       },
       error: (error) => {
         toast({ title: "CSV Parsing Error", description: error.message, variant: "destructive" });
         if (fileInputRef.current) {
-          fileInputRef.current.value = ""; 
+          fileInputRef.current.value = "";
         }
       },
     });
@@ -216,8 +215,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {analysisResult.explanation && <p><span className="font-semibold">Explanation:</span> {analysisResult.explanation}</p>}
-            {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight:</span> {analysisResult.moodWeight}%</p>}
-            {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight:</span> {analysisResult.historyWeight}%</p>}
+            {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight Factor:</span> {analysisResult.moodWeight.toFixed(2)}</p>}
+            {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight Factor:</span> {analysisResult.historyWeight.toFixed(2)}</p>}
             {analysisResult.contentMix && (
               <div>
                 <p className="font-semibold">Suggested Content Mix:</p>
@@ -234,3 +233,4 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     </div>
   );
 }
+
