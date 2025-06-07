@@ -12,19 +12,19 @@ This document outlines the steps to integrate MongoDB for persistent user-specif
     *   [ ] Configure network access (allow connections from your app's IP or 0.0.0.0/0 for development - be careful with production).
 
 2.  **Environment Variables (`.env`):**
-    *   [ ] Add `MONGODB_URI="your_mongodb_connection_string"`
-    *   [ ] Add `NEXTAUTH_URL="http://localhost:9002"` (or your development URL) - *Important for NextAuth.js*
-    *   [ ] Add `NEXTAUTH_SECRET="your_strong_random_secret"` - *Generate a strong secret, e.g., using `openssl rand -base64 32`*
+    *   [x] Add `MONGODB_URI="your_mongodb_connection_string"`
+    *   [x] Add `NEXTAUTH_URL="http://localhost:9002"` (or your development URL) - *Important for NextAuth.js*
+    *   [x] Add `NEXTAUTH_SECRET="your_strong_random_secret"` - *Generate a strong secret, e.g., using `openssl rand -base64 32`*
 
 3.  **Install Dependencies:**
-    *   [ ] `npm install next-auth mongodb mongoose`
+    *   [x] `npm install next-auth mongodb mongoose`
         *   `next-auth`: For handling authentication.
         *   `mongodb`: The official MongoDB Node.js driver.
         *   `mongoose`: An ODM (Object Data Modeling) library for MongoDB to define schemas and models (optional but recommended for structure).
 
 4.  **MongoDB Connection Utility (`src/lib/mongodb.ts` or `src/lib/dbConnect.ts`):**
-    *   [ ] Create a utility function to connect to MongoDB.
-    *   [ ] Implement connection caching to reuse existing connections (important for serverless environments like Next.js API routes).
+    *   [x] Create a utility function to connect to MongoDB.
+    *   [x] Implement connection caching to reuse existing connections (important for serverless environments like Next.js API routes).
 
 ## Phase 2: Database Models (Mongoose Schemas)
 
