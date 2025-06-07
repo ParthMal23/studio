@@ -2,7 +2,7 @@
 "use client";
 
 import type { TimeOfDay } from '@/lib/types';
-import { useTimeOfDay } from '@/hooks/useTimeOfDay';
+// Removed: import { useTimeOfDay } from '@/hooks/useTimeOfDay'; // No longer used here
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,58 +18,29 @@ const timeOfDayOptions: { value: TimeOfDay; label: string, icon: React.ElementTy
 ];
 
 interface TimeSelectorProps {
-  selectedTime: TimeOfDay | undefined;
-  onTimeChange: (time: TimeOfDay) => void;
+  currentTime: TimeOfDay | undefined; // Receives current time from HomePage
+  onTimeChange: (time: TimeOfDay) => void; // Callback to update time in HomePage (calls setManually)
+  isAuto: boolean; // Receives auto status from HomePage
+  onSetAuto: () => void; // Callback to set auto mode in HomePage
 }
 
-export function TimeSelector({ selectedTime, onTimeChange }: TimeSelectorProps) {
-  // Use a local state to manage if the component is ready to display, to avoid hydration issues.
-  const [isClientReady, setIsClientReady] = useState(false);
-  
-  // The hook now takes the selectedTime prop as its initial default.
-  // This `selectedTime` comes from HomePage, which loads it from localStorage client-side.
-  const { currentTimeOfDay: internalTime, isAuto, setAuto, setManually } = useTimeOfDay(selectedTime);
+export function TimeSelector({ currentTime, onTimeChange, isAuto, onSetAuto }: TimeSelectorProps) {
+  const [isClientMounted, setIsClientMounted] = useState(false);
 
   useEffect(() => {
-    setIsClientReady(true);
+    setIsClientMounted(true);
   }, []);
-
-  // When selectedTime prop changes (e.g., loaded from localStorage in HomePage),
-  // update the internal hook's state if it was in auto mode or didn't have a value.
-  useEffect(() => {
-    if (selectedTime && selectedTime !== internalTime) {
-      setManually(selectedTime);
-    }
-  }, [selectedTime, internalTime, setManually]);
-
 
   const handleSelectChange = (value: string) => {
     const newTime = value as TimeOfDay;
-    setManually(newTime); // Update internal hook state
-    onTimeChange(newTime); // Propagate change to HomePage
+    onTimeChange(newTime); // Propagate change to HomePage (which will call setManually)
   };
 
   const handleSetAuto = () => {
-    setAuto(); // Update internal hook state to auto
-    // The useTimeOfDay hook's useEffect will now calculate and set the time.
-    // We need to propagate this auto-detected time back to HomePage.
-    // To do this reliably after state update, we might need another effect in useTimeOfDay or a callback.
-    // For now, we'll rely on the `internalTime` to update.
-    // A more robust solution might involve the hook returning the newly auto-detected time.
-    // For simplicity, let's assume onTimeChange will be called with the new auto time via an effect if internalTime changes
+    onSetAuto(); // Propagate auto-set to HomePage
   };
-  
-  // Effect to call onTimeChange when internalTime (especially after auto-detection) changes
-  useEffect(() => {
-    if (isAuto && internalTime && internalTime !== selectedTime) {
-      onTimeChange(internalTime);
-    }
-  }, [isAuto, internalTime, onTimeChange, selectedTime]);
 
-
-  if (!isClientReady) {
-    // Render a placeholder or skeleton while waiting for client-side readiness
-    // This ensures server and initial client render are consistent.
+  if (!isClientMounted) {
     return (
       <Card className="shadow-lg">
         <CardHeader>
@@ -85,8 +56,8 @@ export function TimeSelector({ selectedTime, onTimeChange }: TimeSelectorProps) 
     );
   }
 
-  const displayTime = internalTime || "Loading...";
-  const CurrentTimeIcon = timeOfDayOptions.find(opt => opt.value === internalTime)?.icon || Clock;
+  const displayTime = currentTime || "Loading...";
+  const CurrentTimeIcon = timeOfDayOptions.find(opt => opt.value === currentTime)?.icon || Clock;
 
   return (
     <Card className="shadow-lg">
@@ -99,18 +70,18 @@ export function TimeSelector({ selectedTime, onTimeChange }: TimeSelectorProps) 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label htmlFor="time-select" className="text-base">
-              Current setting: {displayTime}
+              Current setting: {displayTime} {isAuto && currentTime ? "(Auto)" : ""}
             </Label>
-            {!isAuto && internalTime && ( // Show auto-detect only if not auto and a time is set
+            {!isAuto && currentTime && ( 
               <Button variant="outline" size="sm" onClick={handleSetAuto}>
                 Auto-detect
               </Button>
             )}
           </div>
           <Select
-            value={internalTime || ""} // Select needs a string value, handle undefined
+            value={currentTime || ""} 
             onValueChange={handleSelectChange}
-            disabled={!internalTime} // Disable select if time is still loading
+            disabled={!currentTime && !isAuto} // Allow select if auto and loading, or if manual and set
           >
             <SelectTrigger id="time-select" className="w-full">
               <SelectValue placeholder="Select time of day" />
@@ -126,8 +97,9 @@ export function TimeSelector({ selectedTime, onTimeChange }: TimeSelectorProps) 
               ))}
             </SelectContent>
           </Select>
-          {isAuto && internalTime && <p className="text-sm text-muted-foreground">Time is being auto-detected. You can manually set it above.</p>}
-          {!internalTime && <p className="text-sm text-muted-foreground">Detecting time or awaiting selection...</p>}
+          {isAuto && currentTime && <p className="text-sm text-muted-foreground">Time is being auto-detected. You can manually set it above.</p>}
+          {!currentTime && isAuto && <p className="text-sm text-muted-foreground">Auto-detecting time...</p>}
+          {!currentTime && !isAuto && <p className="text-sm text-muted-foreground">Please select a time or use auto-detect.</p>}
         </div>
       </CardContent>
     </Card>
