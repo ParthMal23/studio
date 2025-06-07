@@ -16,7 +16,7 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
 
   const handleCardInteraction = () => {
     // Open Google search in a new tab
-    const searchTerm = movie.title; // Removed " movie" suffix
+    const searchTerm = movie.title;
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
 
@@ -36,7 +36,7 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     >
       <CardHeader className="p-0 relative">
         <Image
-          src={`https://placehold.co/600x400.png?text=${encodeURIComponent(movie.title)}`}
+          src="https://placehold.co/600x400.png"
           alt={`Poster for ${movie.title}`}
           width={600}
           height={400}
@@ -64,4 +64,3 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     </Card>
   );
 }
-
