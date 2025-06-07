@@ -2,7 +2,7 @@
 import type { MovieRecommendationItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Info } from 'lucide-react';
+import { Info, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface MovieCardProps {
@@ -15,7 +15,6 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
-    // Open Google search in a new tab
     const searchTerm = movie.title;
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
@@ -25,20 +24,14 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     }
   };
 
-  // Generate a more specific data-ai-hint from the movie title
   const getAiHint = (title: string): string => {
-    // Remove punctuation that might interfere, take first part if colon exists
-    const cleanedTitle = title.split(':')[0].replace(/[^\w\s]/gi, '').trim();
-    const words = cleanedTitle.split(/\s+/).filter(Boolean);
-    if (words.length === 1) {
-      return words[0].toLowerCase();
-    }
-    if (words.length >= 2) {
-      return words.slice(0, 2).join(' ').toLowerCase();
-    }
-    return "movie poster"; // Fallback
+    const cleanedTitle = title.split(':')[0].replace(/[^\\w\\s]/gi, '').trim();
+    const words = cleanedTitle.split(/\\s+/).filter(Boolean);
+    if (words.length === 1) return words[0].toLowerCase();
+    if (words.length >= 2) return words.slice(0, 2).join(' ').toLowerCase();
+    return "movie poster"; 
   };
-
+  
   const aiHint = getAiHint(movie.title);
 
   return (
@@ -50,15 +43,30 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
       role="button"
       tabIndex={0}
     >
-      <CardHeader className="p-0 relative">
-        <Image
-          src="https://placehold.co/600x400.png"
-          alt={`Poster for ${movie.title}`}
-          width={600}
-          height={400}
-          className="w-full h-48 object-cover"
-          data-ai-hint={aiHint}
-        />
+      <CardHeader className="p-0 relative aspect-[2/3] bg-muted/30"> {/* Aspect ratio for posters */}
+        {movie.posterUrl ? (
+          <Image
+            src={movie.posterUrl}
+            alt={`Poster for ${movie.title}`}
+            width={600} // Intrinsic width, will be scaled by CSS
+            height={900} // Intrinsic height, will be scaled by CSS
+            className="w-full h-full object-cover"
+            priority={index < 3} // Prioritize loading for the first few images
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+            <ImageOff className="w-16 h-16 mb-2" />
+            <span className="text-xs">No Poster Available</span>
+            <Image
+              src="https://placehold.co/600x400.png" // Fallback, hidden but keeps structure
+              alt=""
+              width={600}
+              height={400}
+              className="w-0 h-0 absolute" // Hide placeholder but keep for layout consistency if needed.
+              data-ai-hint={aiHint}
+            />
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-start mb-1">
@@ -80,4 +88,3 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     </Card>
   );
 }
-

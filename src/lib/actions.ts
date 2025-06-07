@@ -3,7 +3,8 @@
 
 import { generateContentRecommendations, GenerateContentRecommendationsInput, GenerateContentRecommendationsOutput } from "@/ai/flows/generate-movie-recommendations";
 import { analyzeWatchPatterns, AnalyzeWatchPatternsInput, AnalyzeWatchPatternsOutput } from "@/ai/flows/analyze-watch-patterns";
-import type { UserWeights, ViewingHistoryEntry, ContentType, WatchPatternAnalysis } from "./types";
+import { fetchPosterUrl } from "@/services/tmdbService";
+import type { UserWeights, ViewingHistoryEntry, ContentType, WatchPatternAnalysis, MovieRecommendationItem } from "./types";
 
 interface FetchContentRecommendationsParams {
   mood: string;
@@ -15,7 +16,7 @@ interface FetchContentRecommendationsParams {
 
 export async function fetchContentRecommendationsAction(
   params: FetchContentRecommendationsParams
-): Promise<GenerateContentRecommendationsOutput | { error: string }> {
+): Promise<MovieRecommendationItem[] | { error: string }> {
   try {
     const viewingHistorySummary = params.viewingHistory.length > 0
       ? `User has watched: ${params.viewingHistory.map(m => `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''})`).join(', ')}.`
@@ -27,8 +28,23 @@ export async function fetchContentRecommendationsAction(
       viewingHistory: viewingHistorySummary,
       contentType: params.contentType,
     };
-    const recommendations = await generateContentRecommendations(input);
-    return recommendations || [];
+
+    const recommendationsFromAI = await generateContentRecommendations(input);
+    
+    if (!recommendationsFromAI) {
+      return [];
+    }
+
+    // Augment recommendations with poster URLs from TMDB
+    const recommendationsWithPosters: MovieRecommendationItem[] = await Promise.all(
+      recommendationsFromAI.map(async (rec) => {
+        const posterUrl = await fetchPosterUrl(rec.title, params.contentType);
+        return { ...rec, posterUrl };
+      })
+    );
+
+    return recommendationsWithPosters;
+
   } catch (error) {
     console.error("Error fetching content recommendations:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -37,7 +53,7 @@ export async function fetchContentRecommendationsAction(
 }
 
 interface AnalyzeWatchPatternsParams {
-  viewingHistory: ViewingHistoryEntry[]; // This will now include moodAtWatch
+  viewingHistory: ViewingHistoryEntry[];
   currentMood: string;
   currentTime: string;
 }
@@ -47,12 +63,18 @@ export async function analyzeWatchPatternsAction(
 ): Promise<AnalyzeWatchPatternsOutput | { error: string }> {
   try {
     const input: AnalyzeWatchPatternsInput = {
-      viewingHistory: JSON.stringify(params.viewingHistory), // viewingHistory objects now include moodAtWatch
+      viewingHistory: JSON.stringify(params.viewingHistory),
       currentMood: params.currentMood,
       currentTime: params.currentTime,
     };
     const analysis = await analyzeWatchPatterns(input);
-    return analysis;
+    // Ensure default values if AI doesn't provide them, to match the non-optional schema.
+    return {
+      explanation: analysis.explanation || "No specific explanation provided.",
+      moodWeight: analysis.moodWeight === undefined ? 50 : analysis.moodWeight,
+      historyWeight: analysis.historyWeight === undefined ? 50 : analysis.historyWeight,
+      contentMix: analysis.contentMix || [],
+    };
   } catch (error) {
     console.error("Error analyzing watch patterns:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
