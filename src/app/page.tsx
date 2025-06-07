@@ -16,8 +16,9 @@ import { ViewingHistoryTracker } from '@/components/ViewingHistoryTracker';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Loader2, LogOut } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
@@ -25,7 +26,6 @@ const USER_ID_STORAGE_KEY = 'selectedUserId';
 
 export default function HomePage() {
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [currentYear, setCurrentYear] = useState<string | number>('...');
@@ -47,7 +47,6 @@ export default function HomePage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
     setCurrentYear(new Date().getFullYear());
   }, []);
 
@@ -181,7 +180,8 @@ export default function HomePage() {
   };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {
-    // Logic now inside MovieCard for sessionStorage, page handles dialog opening
+    // Logic is now primarily handled within MovieCard.tsx using sessionStorage.
+    // This function remains for potential future use or if direct page interaction is needed again.
   };
 
   const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
@@ -214,7 +214,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <AppHeader />
+      <AppHeader currentUserId={currentUserId} onLogout={handleLogout} />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
@@ -222,12 +222,9 @@ export default function HomePage() {
             <TimeSelector selectedTime={selectedTime} onTimeChange={handleTimeChange} />
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
-            <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !selectedTime || !isMounted} className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
+            <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !selectedTime} className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
               {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCw className="mr-2 h-5 w-5" />}
               Get Recommendations
-            </Button>
-            <Button variant="outline" onClick={handleLogout} className="w-full text-md py-3">
-             <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
           </div>
 
@@ -262,7 +259,7 @@ export default function HomePage() {
         />
       )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
-        FireSync &copy; {currentYear} - Your Personal Content Guide (Profile: {currentUserId})
+        FireSync &copy; {currentYear} - Your Personal Content Guide
       </footer>
     </div>
   );
