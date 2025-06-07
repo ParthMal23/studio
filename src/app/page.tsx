@@ -340,7 +340,7 @@ export default function HomePage() {
                 if (!isOpen) setPotentialGroupPartnerId(null); // Reset on close
             }}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full text-lg py-6 border-accent text-accent hover:border-accent/80 hover:text-accent/80 hover:bg-accent/10">
+                <Button variant="outline" className="w-full text-lg py-6 border-primary text-primary hover:bg-primary/10">
                   <Users className="mr-2 h-5 w-5" />
                   Watch with a Friend
                 </Button>
@@ -428,3 +428,4 @@ export default function HomePage() {
     
 
       
+
