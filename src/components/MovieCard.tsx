@@ -11,25 +11,31 @@ interface MovieCardProps {
   onCardClick?: (movie: MovieRecommendationItem) => void;
 }
 
+// Match the MOCK_USER_ID or use a generic key if sessionStorage should not be user-specific for this item
+// For simplicity in this basic model, we can keep it less user-specific or append a general identifier.
+// If true user-specific session storage is needed, MOCK_USER_ID from page.tsx context would be required here.
+// For now, let's assume pending feedback is per-session, not strictly per-mock-user for this example.
+const SS_PENDING_FEEDBACK_KEY_BASE = 'pendingFeedbackItem';
+
+
 export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
-    // Store item for potential feedback
     try {
       const itemToStore = { 
         title: movie.title, 
         platform: movie.platform, 
-        description: movie.description, // Storing description for context in dialog
-        reason: movie.reason, // Storing reason for context
-        posterUrl: movie.posterUrl // Storing posterUrl for potential display in dialog
+        description: movie.description,
+        reason: movie.reason,
+        posterUrl: movie.posterUrl
       };
-      sessionStorage.setItem('pendingFeedbackItem', JSON.stringify(itemToStore));
+      // Key could be made dynamic if MOCK_USER_ID was available here via context/props
+      sessionStorage.setItem(SS_PENDING_FEEDBACK_KEY_BASE, JSON.stringify(itemToStore));
     } catch (e) {
       console.error("Error saving to sessionStorage:", e);
     }
 
-    // Open Google search
     const searchTerm = movie.title;
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');

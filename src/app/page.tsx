@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -19,9 +20,13 @@ import { RefreshCw, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const LS_VIEWING_HISTORY_KEY = 'fireSyncViewingHistory';
-const LS_USER_PREFERENCES_KEY = 'fireSyncUserPreferences';
-const SS_PENDING_FEEDBACK_KEY = 'pendingFeedbackItem';
+// --- Mock User ID for simulation ---
+const MOCK_USER_ID = "defaultUser"; // In a real app, this would come from an auth system.
+
+// --- User-specific localStorage keys ---
+const LS_VIEWING_HISTORY_KEY = `fireSyncViewingHistory_${MOCK_USER_ID}`;
+const LS_USER_PREFERENCES_KEY = `fireSyncUserPreferences_${MOCK_USER_ID}`;
+const SS_PENDING_FEEDBACK_KEY = `pendingFeedbackItem_${MOCK_USER_ID}`; // Also make session storage key user-specific if desired, or keep global
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
@@ -69,7 +74,7 @@ export default function HomePage() {
       try {
         setViewingHistory(JSON.parse(storedHistory));
       } catch (e) {
-        console.error("Failed to parse viewing history from localStorage", e);
+        console.error(`Failed to parse viewing history from localStorage for key ${LS_VIEWING_HISTORY_KEY}:`, e);
       }
     }
 
@@ -80,9 +85,9 @@ export default function HomePage() {
         if (prefs.mood) setMood(prefs.mood);
         if (prefs.userWeights) setUserWeights(prefs.userWeights);
         if (prefs.contentType) setContentType(prefs.contentType);
-        // selectedTime is handled by its own useEffect to prioritize detectedTime initially if no stored pref
+        // selectedTime is handled by its own useEffect
       } catch (e) {
-        console.error("Failed to parse preferences from localStorage", e);
+        console.error(`Failed to parse preferences from localStorage for key ${LS_USER_PREFERENCES_KEY}:`, e);
       }
     }
     
@@ -97,9 +102,6 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isMounted) return;
-    // This effect now runs after initial preference load.
-    // It prioritizes detectedTime if no selectedTime is stored,
-    // otherwise, it loads the stored selectedTime.
     const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
     let timeFromStorage: TimeOfDay | undefined = undefined;
     if (storedPreferences) {
@@ -115,7 +117,7 @@ export default function HomePage() {
 
     if (timeFromStorage) {
         setSelectedTime(timeFromStorage);
-        setSelectedTimeManually(timeFromStorage); // also set it in the hook
+        setSelectedTimeManually(timeFromStorage); 
     } else if (detectedTime !== undefined) {
         setSelectedTime(detectedTime);
     }
@@ -135,6 +137,7 @@ export default function HomePage() {
     }
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
+    // In a real app with auth, userId would be passed here or determined server-side
     const result = await fetchContentRecommendationsAction({ mood, timeOfDay: selectedTime, viewingHistory, userWeights, contentType });
     setIsLoadingRecommendations(false);
     if ('error' in result) {
@@ -162,7 +165,7 @@ export default function HomePage() {
 
   const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
     const newEntry: ViewingHistoryEntry = {
-      ...feedback, // This will include title, rating, completed, moodAtWatch, and timeOfDayAtWatch from FeedbackDialog
+      ...feedback, 
       id: Date.now().toString(),
     };
     setViewingHistory(prevHistory => [...prevHistory, newEntry]);
@@ -207,7 +210,7 @@ export default function HomePage() {
                 viewingHistory={viewingHistory}
                 onHistoryChange={setViewingHistory}
                 currentMood={mood}
-                currentTime={selectedTime} // Pass current selected time for manual adds
+                currentTime={selectedTime} 
               />
             ) : (
               <Card className="shadow-lg">
@@ -226,11 +229,11 @@ export default function HomePage() {
           }}
           onSubmit={handleFeedbackSubmit}
           movieItem={pendingFeedbackItemForDialog}
-          currentTimeOfDayAtWatch={selectedTime} // Pass current selected time
+          currentTimeOfDayAtWatch={selectedTime} 
         />
       )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
-        FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Content Guide
+        FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Content Guide (User: {MOCK_USER_ID})
       </footer>
     </div>
   );
