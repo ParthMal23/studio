@@ -11,7 +11,6 @@ interface FetchContentRecommendationsParams {
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
   contentType: ContentType;
-  // userWeights are not directly used by generateContentRecommendations AI but kept for consistency if needed elsewhere
 }
 
 export async function fetchContentRecommendationsAction(
@@ -67,7 +66,6 @@ export async function analyzeWatchPatternsAction(
   params: AnalyzeWatchPatternsParams
 ): Promise<AnalyzeWatchPatternsOutput | { error: string }> {
   try {
-    // viewingHistory will now include timeOfDayAtWatch if present on entries
     const input: AnalyzeWatchPatternsInput = {
       viewingHistory: JSON.stringify(params.viewingHistory),
       currentMood: params.currentMood,
@@ -87,12 +85,15 @@ export async function analyzeWatchPatternsAction(
   }
 }
 
+const normalizeTitle = (title: string): string => {
+  if (!title) return '';
+  return title.toLowerCase().replace(/\s+/g, ' ').trim();
+};
 
 export async function fetchGroupRecommendationsAction(
   params: FetchGroupRecommendationsParams
 ): Promise<MovieRecommendationItem[] | { error: string }> {
   try {
-    // Fetch recommendations for User 1
     const recs1Result = await fetchContentRecommendationsAction({
       mood: params.user1Data.mood,
       timeOfDay: params.user1Data.timeOfDay,
@@ -100,7 +101,6 @@ export async function fetchGroupRecommendationsAction(
       contentType: params.user1Data.contentType,
     });
 
-    // Fetch recommendations for User 2
     const recs2Result = await fetchContentRecommendationsAction({
       mood: params.user2Data.mood,
       timeOfDay: params.user2Data.timeOfDay,
@@ -114,19 +114,16 @@ export async function fetchGroupRecommendationsAction(
     const recs1 = recs1Result as MovieRecommendationItem[];
     const recs2 = recs2Result as MovieRecommendationItem[];
 
-    // Find intersection based on title
     const commonRecommendations: MovieRecommendationItem[] = [];
-    const titlesInRecs1 = new Set(recs1.map(rec => rec.title.toLowerCase().trim()));
+    const titlesInRecs1 = new Set(recs1.map(rec => normalizeTitle(rec.title)));
 
     for (const rec of recs2) {
-      if (titlesInRecs1.has(rec.title.toLowerCase().trim())) {
-        // To provide a reason for the group, we can combine or choose one.
-        // For simplicity, let's pick the reason from User 1's perspective if it's common.
-        const originalRec1 = recs1.find(r => r.title.toLowerCase().trim() === rec.title.toLowerCase().trim());
+      if (titlesInRecs1.has(normalizeTitle(rec.title))) {
+        // Use details from rec2 (which includes posterUrl from its TMDB fetch)
+        // The reason should reflect that it's a common pick.
         commonRecommendations.push({
-          ...rec, // Takes details from rec2 (poster, etc.)
-          // Optionally, craft a new reason or take one from User 1 or 2.
-          reason: `Common interest! User 1 reason: ${originalRec1?.reason}. User 2 reason: ${rec.reason}`,
+          ...rec,
+          reason: "This pick appeared in recommendations for both users, making it a great choice to watch together!",
         });
       }
     }
