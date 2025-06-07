@@ -15,13 +15,9 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
-    if (movie.watchUrl) {
-      window.open(movie.watchUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      const searchTerm = movie.title;
-      const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
-      window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
-    }
+    const searchTerm = movie.title;
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
+    window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
 
     if (onCardClick) {
       onCardClick(movie);
@@ -46,7 +42,7 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"
       tabIndex={0}
-      aria-label={`View details for ${movie.title}${movie.watchUrl ? ' on TMDB' : ' on Google'}`}
+      aria-label={`Search Google for ${movie.title}`}
     >
       <CardHeader className="p-0 relative aspect-[2/3] bg-muted/30">
         {movie.posterUrl ? (
