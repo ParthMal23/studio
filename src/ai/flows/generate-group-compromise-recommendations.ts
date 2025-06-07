@@ -19,7 +19,7 @@ const ContentRecommendationSchema = z.object({
   reason: z
     .string()
     .describe(
-      'The reason for recommending this item for the group, considering it as a compromise or based on shared broader tastes.'
+      'The reason for recommending this item for the group, considering it as a compromise or based on shared broader tastes. Use the names provided in the profile summaries (e.g., "Admin", "Parth") when referring to users.'
     ),
   platform: z.string().describe('The name of the OTT platform where this content is available (e.g., Netflix, Hulu, Amazon Prime Video).'),
 });
@@ -27,10 +27,10 @@ const ContentRecommendationSchema = z.object({
 const GenerateGroupCompromiseRecommendationsInputSchema = z.object({
   user1ProfileSummary: z
     .string()
-    .describe("A summary of User 1's profile including mood, time of day, and key viewing history titles."),
+    .describe("A summary of the first user's profile including their name, mood, time of day, and key viewing history titles."),
   user2ProfileSummary: z
     .string()
-    .describe("A summary of User 2's profile including mood, time of day, and key viewing history titles."),
+    .describe("A summary of the second user's profile including their name, mood, time of day, and key viewing history titles."),
   currentTimeOfDay: z
     .string()
     .describe('The current time of day (e.g., morning, afternoon, evening, night).'),
@@ -54,11 +54,11 @@ const prompt = ai.definePrompt({
   name: 'generateGroupCompromiseRecommendationsPrompt',
   input: {schema: GenerateGroupCompromiseRecommendationsInputSchema},
   output: {schema: GenerateGroupCompromiseRecommendationsOutputSchema},
-  prompt: `You are an expert in recommending movies and TV series for groups. Two users, User 1 and User 2, did not have any overlapping recommendations based on their individual top preferences.
+  prompt: `You are an expert in recommending movies and TV series for groups. Two users did not have any overlapping recommendations based on their individual top preferences, or you are supplementing their common picks.
 Your task is to suggest 3-4 {{{targetContentType}}} that could be a good compromise or appeal to shared broader tastes.
 
-User 1 Profile: {{{user1ProfileSummary}}}
-User 2 Profile: {{{user2ProfileSummary}}}
+First User Profile: {{{user1ProfileSummary}}}
+Second User Profile: {{{user2ProfileSummary}}}
 Current Time of Day: {{{currentTimeOfDay}}}
 Target Content Type: {{{targetContentType}}}
 
@@ -66,14 +66,14 @@ Consider the following when making suggestions:
 - Look for common genres or themes that might appeal to both, even if not their absolute top preference.
 - If their moods (if mentioned in summaries) are conflicting, aim for content that is generally well-received, critically acclaimed, or a 'safe bet'.
 - The time of day might influence the tone (e.g., lighter content for daytime).
-- Each recommendation must include a title, description, platform, and a specific 'reason' explaining why it's a good pick for THIS GROUP as a compromise or shared interest.
+- Each recommendation must include a title, description, platform, and a specific 'reason' explaining why it's a good pick for THIS GROUP. Refer to the users by the names provided in their profile summaries (e.g., "Admin", "Parth") or use generic terms like "both users" when appropriate.
 
 Return a JSON array of recommendations. Ensure the entire output is a valid JSON array.
 Example of a single item:
 {
   "title": "Compromise Choice Movie",
   "description": "A widely acclaimed film that blends genres.",
-  "reason": "While User 1 enjoys action and User 2 prefers drama, this film offers strong storytelling and compelling characters that both might appreciate, suitable for an evening watch.",
+  "reason": "While Admin enjoys action and Parth prefers drama, this film offers strong storytelling and compelling characters that both might appreciate, suitable for an evening watch.",
   "platform": "HBO Max"
 }
 `,

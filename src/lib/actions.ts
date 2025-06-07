@@ -15,6 +15,11 @@ interface FetchContentRecommendationsParams {
 }
 
 const COMMON_RECOMMENDATION_REASON_PREFIX = "Common Pick:";
+const userDisplayNames: Record<string, string> = {
+  user1: 'Admin',
+  user2: 'Parth',
+};
+
 
 export async function fetchContentRecommendationsAction(
   params: FetchContentRecommendationsParams
@@ -100,6 +105,9 @@ export async function fetchGroupRecommendationsAction(
     const finalRecommendations: MovieRecommendationItem[] = [];
     const processedTitles = new Set<string>();
 
+    const user1DisplayName = userDisplayNames[params.user1Data.userId] || params.user1Data.userId;
+    const user2DisplayName = userDisplayNames[params.user2Data.userId] || params.user2Data.userId;
+
     // 1. Fetch individual recommendations to find common ones
     const recs1Result = await fetchContentRecommendationsAction({
       mood: params.user1Data.mood,
@@ -115,8 +123,8 @@ export async function fetchGroupRecommendationsAction(
       contentType: params.user2Data.contentType,
     });
 
-    if ('error' in recs1Result) return { error: `Error fetching recommendations for User 1: ${recs1Result.error}`, type: 'common' };
-    if ('error' in recs2Result) return { error: `Error fetching recommendations for User 2: ${recs2Result.error}`, type: 'common' };
+    if ('error' in recs1Result) return { error: `Error fetching recommendations for ${user1DisplayName}: ${recs1Result.error}`, type: 'common' };
+    if ('error' in recs2Result) return { error: `Error fetching recommendations for ${user2DisplayName}: ${recs2Result.error}`, type: 'common' };
 
     const recs1 = recs1Result as MovieRecommendationItem[];
     const recs2 = recs2Result as MovieRecommendationItem[];
@@ -129,8 +137,8 @@ export async function fetchGroupRecommendationsAction(
         const rec1Details = titlesInRecs1.get(normalizedRec2Title);
         if (rec1Details && !processedTitles.has(normalizedRec2Title)) {
             finalRecommendations.push({
-            ...rec1Details, // Use details from one of the individual recs
-            reason: `${COMMON_RECOMMENDATION_REASON_PREFIX} Appeared in recommendations for both users. Great minds think alike!`,
+            ...rec1Details, 
+            reason: `${COMMON_RECOMMENDATION_REASON_PREFIX} A great match for both ${user1DisplayName} and ${user2DisplayName}!`,
             });
             processedTitles.add(normalizedRec2Title);
         }
@@ -141,8 +149,8 @@ export async function fetchGroupRecommendationsAction(
     const user1HistoryTitles = params.user1Data.viewingHistory.map(h => h.title).slice(0, 10).join(', ') || 'None';
     const user2HistoryTitles = params.user2Data.viewingHistory.map(h => h.title).slice(0, 10).join(', ') || 'None';
     
-    const user1ProfileSummary = `User 1: Mood - ${params.user1Data.mood}, Time - ${params.user1Data.timeOfDay}, Key History - ${user1HistoryTitles}.`;
-    const user2ProfileSummary = `User 2: Mood - ${params.user2Data.mood}, Time - ${params.user2Data.timeOfDay}, Key History - ${user2HistoryTitles}.`;
+    const user1ProfileSummary = `${user1DisplayName}: Mood - ${params.user1Data.mood}, Time - ${params.user1Data.timeOfDay}, Key History - ${user1HistoryTitles}.`;
+    const user2ProfileSummary = `${user2DisplayName}: Mood - ${params.user2Data.mood}, Time - ${params.user2Data.timeOfDay}, Key History - ${user2HistoryTitles}.`;
 
     let compromiseContentType: ContentType = "BOTH";
     if (params.user1Data.contentType === params.user2Data.contentType) {
@@ -184,9 +192,6 @@ export async function fetchGroupRecommendationsAction(
   } catch (error) {
     console.error("Error fetching group content recommendations:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    // Type 'combined' indicates that both common and compromise paths were attempted.
     return { error: `Failed to fetch group content recommendations: ${errorMessage}`, type: 'combined' };
   }
 }
-
-    
