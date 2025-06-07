@@ -15,6 +15,21 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
+    // Store item for potential feedback
+    try {
+      const itemToStore = { 
+        title: movie.title, 
+        platform: movie.platform, 
+        description: movie.description, // Storing description for context in dialog
+        reason: movie.reason, // Storing reason for context
+        posterUrl: movie.posterUrl // Storing posterUrl for potential display in dialog
+      };
+      sessionStorage.setItem('pendingFeedbackItem', JSON.stringify(itemToStore));
+    } catch (e) {
+      console.error("Error saving to sessionStorage:", e);
+    }
+
+    // Open Google search
     const searchTerm = movie.title;
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');

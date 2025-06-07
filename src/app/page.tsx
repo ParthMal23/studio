@@ -12,6 +12,7 @@ import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
 import { ViewingHistoryTracker } from '@/components/ViewingHistoryTracker';
+import { FeedbackDialog } from '@/components/FeedbackDialog'; // New component
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const LS_VIEWING_HISTORY_KEY = 'fireSyncViewingHistory';
 const LS_USER_PREFERENCES_KEY = 'fireSyncUserPreferences';
+const SS_PENDING_FEEDBACK_KEY = 'pendingFeedbackItem';
+
+// Define a type for the item stored in sessionStorage for feedback
+type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
+
 
 export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -36,7 +42,26 @@ export default function HomePage() {
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
 
+  const [pendingFeedbackItemForDialog, setPendingFeedbackItemForDialog] = useState<PendingFeedbackStorageItem | null>(null);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+
   const { toast } = useToast();
+
+  const checkForPendingFeedback = useCallback(() => {
+    if (!isMounted) return;
+    const storedItem = sessionStorage.getItem(SS_PENDING_FEEDBACK_KEY);
+    if (storedItem) {
+      try {
+        const item: PendingFeedbackStorageItem = JSON.parse(storedItem);
+        setPendingFeedbackItemForDialog(item);
+        setIsFeedbackDialogOpen(true);
+        sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); // Clear after processing
+      } catch (e) {
+        console.error("Failed to parse pending feedback item from sessionStorage", e);
+        sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); // Clear if parsing fails
+      }
+    }
+  }, [isMounted]);
 
   useEffect(() => {
     setIsMounted(true); 
@@ -62,7 +87,15 @@ export default function HomePage() {
         console.error("Failed to parse preferences from localStorage", e);
       }
     }
-  }, []);
+    
+    checkForPendingFeedback(); // Check on initial mount
+    window.addEventListener('focus', checkForPendingFeedback); // Check when tab regains focus
+
+    return () => {
+      window.removeEventListener('focus', checkForPendingFeedback);
+    };
+
+  }, [checkForPendingFeedback]); // Add checkForPendingFeedback to dependency array
 
   useEffect(() => {
     if (!isMounted) return;
@@ -121,9 +154,21 @@ export default function HomePage() {
   };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {
-    // Placeholder for future interaction, e.g., showing more details
-    // console.log("Card clicked:", movie.title);
+    // This function could be used for other future interactions if needed
+    // console.log("Card clicked, preparing for potential feedback:", movie.title);
   };
+
+  const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
+    const newEntry: ViewingHistoryEntry = {
+      ...feedback,
+      id: Date.now().toString(),
+    };
+    setViewingHistory(prevHistory => [...prevHistory, newEntry]);
+    setIsFeedbackDialogOpen(false);
+    setPendingFeedbackItemForDialog(null);
+    toast({ title: "History Updated", description: `${feedback.title} added to your viewing history.` });
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -152,7 +197,7 @@ export default function HomePage() {
               recommendations={recommendations}
               isLoading={isLoadingRecommendations}
               error={recommendationError}
-              onCardClick={handleCardClick}
+              onCardClick={handleCardClick} // Pass the handler
             />
             <Separator className="my-8" />
             {isMounted ? (
@@ -170,6 +215,17 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+      {pendingFeedbackItemForDialog && (
+        <FeedbackDialog
+          isOpen={isFeedbackDialogOpen}
+          onClose={() => {
+            setIsFeedbackDialogOpen(false);
+            setPendingFeedbackItemForDialog(null);
+          }}
+          onSubmit={handleFeedbackSubmit}
+          movieItem={pendingFeedbackItemForDialog}
+        />
+      )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
         FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Content Guide
       </footer>
