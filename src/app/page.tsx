@@ -23,6 +23,8 @@ import { RefreshCw, Loader2, Users, LogOut } from 'lucide-react';
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
 const USER_ID_STORAGE_KEY = 'selectedUserId';
+const COMMON_RECOMMENDATION_REASON_PREFIX = "Common Pick:";
+
 
 export default function HomePage() {
   const router = useRouter();
@@ -245,10 +247,9 @@ export default function HomePage() {
       if (result.length === 0) {
         toast({ title: "No Group Recommendations", description: "Could not find common or compromise recommendations. Try adjusting preferences." });
       } else {
-        // Check if the reason implies it's a common pick or a compromise
-        const isCommonPick = result.some(rec => rec.reason.toLowerCase().includes("both users"));
-        if (isCommonPick) {
-            toast({ title: "Group Recs Success!", description: "Found common recommendations for the group!" });
+        const hasCommonPick = result.some(rec => rec.reason?.startsWith(COMMON_RECOMMENDATION_REASON_PREFIX));
+        if (hasCommonPick) {
+            toast({ title: "Group Recs Success!", description: "Found recommendations including common picks for the group!" });
         } else {
             toast({ title: "Group Recs Found!", description: "Found some compromise recommendations for the group." });
         }
@@ -365,3 +366,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

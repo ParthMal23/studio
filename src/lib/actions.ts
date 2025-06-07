@@ -14,6 +14,8 @@ interface FetchContentRecommendationsParams {
   contentType: ContentType;
 }
 
+const COMMON_RECOMMENDATION_REASON_PREFIX = "Common Pick:";
+
 export async function fetchContentRecommendationsAction(
   params: FetchContentRecommendationsParams
 ): Promise<MovieRecommendationItem[] | { error: string }> {
@@ -93,8 +95,12 @@ const normalizeTitle = (title: string): string => {
 
 export async function fetchGroupRecommendationsAction(
   params: FetchGroupRecommendationsParams
-): Promise<MovieRecommendationItem[] | { error: string; type?: 'common' | 'compromise' }> {
+): Promise<MovieRecommendationItem[] | { error: string; type?: 'common' | 'compromise' | 'combined' }> {
   try {
+    const finalRecommendations: MovieRecommendationItem[] = [];
+    const processedTitles = new Set<string>();
+
+    // 1. Fetch individual recommendations to find common ones
     const recs1Result = await fetchContentRecommendationsAction({
       mood: params.user1Data.mood,
       timeOfDay: params.user1Data.timeOfDay,
@@ -115,24 +121,23 @@ export async function fetchGroupRecommendationsAction(
     const recs1 = recs1Result as MovieRecommendationItem[];
     const recs2 = recs2Result as MovieRecommendationItem[];
 
-    const commonRecommendations: MovieRecommendationItem[] = [];
-    const titlesInRecs1 = new Set(recs1.map(rec => normalizeTitle(rec.title)));
+    const titlesInRecs1 = new Map(recs1.map(rec => [normalizeTitle(rec.title), rec]));
 
-    for (const rec of recs2) {
-      if (titlesInRecs1.has(normalizeTitle(rec.title))) {
-        commonRecommendations.push({
-          ...rec, // Use details from rec2 as it includes posterUrl etc.
-          reason: "This pick appeared in recommendations for both users, making it a great choice to watch together!",
-        });
+    for (const rec2 of recs2) {
+      const normalizedRec2Title = normalizeTitle(rec2.title);
+      if (titlesInRecs1.has(normalizedRec2Title)) {
+        const rec1Details = titlesInRecs1.get(normalizedRec2Title);
+        if (rec1Details && !processedTitles.has(normalizedRec2Title)) {
+            finalRecommendations.push({
+            ...rec1Details, // Use details from one of the individual recs
+            reason: `${COMMON_RECOMMENDATION_REASON_PREFIX} Appeared in recommendations for both users. Great minds think alike!`,
+            });
+            processedTitles.add(normalizedRec2Title);
+        }
       }
     }
     
-    if (commonRecommendations.length > 0) {
-      return commonRecommendations;
-    }
-
-    // Fallback: No common recommendations, try to generate compromise ones.
-    console.log("No common recommendations found, attempting compromise flow.");
+    // 2. Fetch compromise recommendations
     const user1HistoryTitles = params.user1Data.viewingHistory.map(h => h.title).slice(0, 10).join(', ') || 'None';
     const user2HistoryTitles = params.user2Data.viewingHistory.map(h => h.title).slice(0, 10).join(', ') || 'None';
     
@@ -147,33 +152,41 @@ export async function fetchGroupRecommendationsAction(
     const compromiseInput: GenerateGroupCompromiseRecommendationsInput = {
       user1ProfileSummary,
       user2ProfileSummary,
-      currentTimeOfDay: params.user1Data.timeOfDay, // Using User 1's time as a reference
+      currentTimeOfDay: params.user1Data.timeOfDay, 
       targetContentType: compromiseContentType,
     };
 
     const compromiseRecsFromAI = await generateGroupCompromiseRecommendations(compromiseInput);
 
-    if (!compromiseRecsFromAI || compromiseRecsFromAI.length === 0) {
-      // If compromise also fails or returns nothing, return an empty array (or a specific error if preferred)
-      return []; 
+    if (compromiseRecsFromAI && compromiseRecsFromAI.length > 0) {
+      const compromiseRecsWithDetails: MovieRecommendationItem[] = await Promise.all(
+        compromiseRecsFromAI.map(async (rec) => {
+          const tmdbDetails = await fetchContentDetailsFromTmdb(rec.title, compromiseContentType);
+          return {
+            ...rec, 
+            posterUrl: tmdbDetails.posterUrl,
+            watchUrl: tmdbDetails.watchUrl,
+          };
+        })
+      );
+      
+      for (const compromiseRec of compromiseRecsWithDetails) {
+        const normalizedCompromiseTitle = normalizeTitle(compromiseRec.title);
+        if (!processedTitles.has(normalizedCompromiseTitle)) {
+          finalRecommendations.push(compromiseRec);
+          processedTitles.add(normalizedCompromiseTitle);
+        }
+      }
     }
-
-    const compromiseRecsWithDetails: MovieRecommendationItem[] = await Promise.all(
-      compromiseRecsFromAI.map(async (rec) => {
-        const tmdbDetails = await fetchContentDetailsFromTmdb(rec.title, compromiseContentType);
-        return {
-          ...rec, // AI provides the reason specifically for the group
-          posterUrl: tmdbDetails.posterUrl,
-          watchUrl: tmdbDetails.watchUrl,
-        };
-      })
-    );
     
-    return compromiseRecsWithDetails;
+    return finalRecommendations;
 
   } catch (error) {
     console.error("Error fetching group content recommendations:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    return { error: `Failed to fetch group content recommendations: ${errorMessage}`, type: 'compromise' };
+    // Type 'combined' indicates that both common and compromise paths were attempted.
+    return { error: `Failed to fetch group content recommendations: ${errorMessage}`, type: 'combined' };
   }
 }
+
+    
