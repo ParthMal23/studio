@@ -2,21 +2,32 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import type { ViewingHistoryEntry, WatchPatternAnalysis } from '@/lib/types';
+import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion } from 'lucide-react';
 import Papa from 'papaparse';
+
+const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
+  { value: "Happy", label: "Happy", icon: Smile },
+  { value: "Sad", label: "Sad", icon: Frown },
+  { value: "Relaxed", label: "Relaxed", icon: Coffee },
+  { value: "Excited", label: "Excited", icon: Zap },
+  { value: "Calm", label: "Calm", icon: Coffee },
+  { value: "Adventurous", label: "Adventurous", icon: Zap },
+  { value: "Neutral", label: "Neutral", icon: Meh },
+];
 
 interface ViewingHistoryTrackerProps {
   viewingHistory: ViewingHistoryEntry[];
   onHistoryChange: (history: ViewingHistoryEntry[]) => void;
-  currentMood: string;
+  currentMood: string; // This is the user's current mood for analysis, not mood at watch
   currentTime: string | undefined;
 }
 
@@ -24,6 +35,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
   const [newMovieTitle, setNewMovieTitle] = useState('');
   const [newMovieRating, setNewMovieRating] = useState(3);
   const [newMovieCompleted, setNewMovieCompleted] = useState(true);
+  const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(undefined);
   const [analysisResult, setAnalysisResult] = useState<WatchPatternAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
@@ -39,11 +51,13 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       title: newMovieTitle,
       rating: newMovieRating,
       completed: newMovieCompleted,
+      moodAtWatch: newMovieMoodAtWatch,
     };
     onHistoryChange([...viewingHistory, newEntry]);
     setNewMovieTitle('');
     setNewMovieRating(3);
     setNewMovieCompleted(true);
+    setNewMovieMoodAtWatch(undefined);
     toast({ title: "History Updated", description: `${newMovieTitle} added to your viewing history.` });
   };
 
@@ -93,6 +107,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               title: title.trim(),
               rating: 3, // Default rating
               completed: true, // Default completed status
+              // moodAtWatch will be undefined for CSV imports initially
             });
           }
         });
@@ -123,7 +138,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <History className="h-6 w-6" /> Your Viewing History
           </CardTitle>
-          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV (e.g., from Netflix).</CardDescription>
+          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -135,8 +150,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               placeholder="e.g., The Grand Adventure"
             />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="item-rating">Rating (1-5)</Label>
               <Input
                 id="item-rating"
@@ -147,14 +162,33 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                 onChange={(e) => setNewMovieRating(parseInt(e.target.value))}
               />
             </div>
-            <div className="flex items-center space-x-2 pt-6">
-              <Checkbox
-                id="item-completed"
-                checked={newMovieCompleted}
-                onCheckedChange={(checked) => setNewMovieCompleted(Boolean(checked))}
-              />
-              <Label htmlFor="item-completed">Completed?</Label>
+            <div>
+              <Label htmlFor="item-mood-at-watch">Mood When Watched (Optional)</Label>
+              <Select value={newMovieMoodAtWatch} onValueChange={(value) => setNewMovieMoodAtWatch(value as Mood)}>
+                <SelectTrigger id="item-mood-at-watch">
+                  <SelectValue placeholder="Select mood" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="undefined">None</SelectItem>
+                  {moodsForSelection.map((mood) => (
+                    <SelectItem key={mood.value} value={mood.value}>
+                      <div className="flex items-center gap-2">
+                        {mood.icon && <mood.icon className="h-4 w-4 text-muted-foreground" />}
+                        {mood.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox
+              id="item-completed"
+              checked={newMovieCompleted}
+              onCheckedChange={(checked) => setNewMovieCompleted(Boolean(checked))}
+            />
+            <Label htmlFor="item-completed">Completed?</Label>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Button onClick={handleAddMovie} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -188,6 +222,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                     <p className="text-sm text-muted-foreground">
                       Rating: {"⭐".repeat(item.rating)}{" "}
                       ({item.completed ? "Completed" : "Not Completed"})
+                      {item.moodAtWatch && `, Mood: ${item.moodAtWatch}`}
                     </p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleRemoveMovie(item.id)} aria-label="Remove item">

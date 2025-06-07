@@ -16,6 +16,7 @@ export interface ViewingHistoryEntry {
   title: string;
   rating: number; // 1-5
   completed: boolean;
+  moodAtWatch?: Mood; // Added mood at time of watching
 }
 
 export interface MovieRecommendationItem {

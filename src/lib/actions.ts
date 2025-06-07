@@ -18,7 +18,7 @@ export async function fetchContentRecommendationsAction(
 ): Promise<GenerateContentRecommendationsOutput | { error: string }> {
   try {
     const viewingHistorySummary = params.viewingHistory.length > 0
-      ? `User has watched: ${params.viewingHistory.map(m => `${m.title} (rated ${m.rating}/5, completed: ${m.completed})`).join(', ')}.`
+      ? `User has watched: ${params.viewingHistory.map(m => `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''})`).join(', ')}.`
       : "User has no viewing history yet.";
 
     const input: GenerateContentRecommendationsInput = {
@@ -28,7 +28,7 @@ export async function fetchContentRecommendationsAction(
       contentType: params.contentType,
     };
     const recommendations = await generateContentRecommendations(input);
-    return recommendations || []; // Ensure an array is always returned
+    return recommendations || [];
   } catch (error) {
     console.error("Error fetching content recommendations:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -37,7 +37,7 @@ export async function fetchContentRecommendationsAction(
 }
 
 interface AnalyzeWatchPatternsParams {
-  viewingHistory: ViewingHistoryEntry[];
+  viewingHistory: ViewingHistoryEntry[]; // This will now include moodAtWatch
   currentMood: string;
   currentTime: string;
 }
@@ -47,13 +47,11 @@ export async function analyzeWatchPatternsAction(
 ): Promise<AnalyzeWatchPatternsOutput | { error: string }> {
   try {
     const input: AnalyzeWatchPatternsInput = {
-      viewingHistory: JSON.stringify(params.viewingHistory),
+      viewingHistory: JSON.stringify(params.viewingHistory), // viewingHistory objects now include moodAtWatch
       currentMood: params.currentMood,
       currentTime: params.currentTime,
     };
     const analysis = await analyzeWatchPatterns(input);
-    // The analyzeWatchPatterns flow now directly returns the structured object
-    // validated by Zod.
     return analysis;
   } catch (error) {
     console.error("Error analyzing watch patterns:", error);
