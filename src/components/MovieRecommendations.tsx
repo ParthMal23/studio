@@ -1,7 +1,7 @@
 
 import type { MovieRecommendationItem } from '@/lib/types';
 import { MovieCard } from './MovieCard';
-import { AlertTriangle, Zap } from 'lucide-react';
+import { AlertTriangle, Zap, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MovieRecommendationsProps {
@@ -9,15 +9,34 @@ interface MovieRecommendationsProps {
   isLoading: boolean;
   error?: string | null;
   onCardClick: (movie: MovieRecommendationItem) => void;
-  currentUserId: string | null; // Added currentUserId prop
+  currentUserId: string | null;
+  title: string; // To customize the heading
+  emptyStateMessage?: string; // Custom message when no recommendations
+  showWhenEmpty?: boolean; // Control visibility when empty (useful for group recs)
 }
 
-export function MovieRecommendations({ recommendations, isLoading, error, onCardClick, currentUserId }: MovieRecommendationsProps) {
+export function MovieRecommendations({
+  recommendations,
+  isLoading,
+  error,
+  onCardClick,
+  currentUserId,
+  title,
+  emptyStateMessage = "Adjust your preferences and try again!",
+  showWhenEmpty = true, // By default, always show the component structure even if empty
+}: MovieRecommendationsProps) {
+  const currentRecommendations = recommendations || [];
+  const IconComponent = title.toLowerCase().includes("group") ? Users : Zap;
+
+  if (!showWhenEmpty && !isLoading && !error && currentRecommendations.length === 0) {
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="mt-8">
         <h2 className="text-2xl font-headline font-semibold mb-6 text-primary flex items-center gap-2">
-          <Zap className="h-7 w-7 animate-pulse-soft" /> Conjuring Recommendations...
+          <IconComponent className="h-7 w-7 animate-pulse-soft" /> Conjuring Recommendations...
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
@@ -40,14 +59,12 @@ export function MovieRecommendations({ recommendations, isLoading, error, onCard
     );
   }
 
-  const currentRecommendations = recommendations || [];
-
   if (currentRecommendations.length === 0 && !isLoading) {
     return (
       <div className="mt-8 text-center py-10">
-        <Zap className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h2 className="text-xl font-headline font-semibold text-muted-foreground">No recommendations yet.</h2>
-        <p className="text-muted-foreground">Adjust your preferences and try again!</p>
+        <IconComponent className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+        <h2 className="text-xl font-headline font-semibold text-muted-foreground">{title.includes("Group") ? "No Common Picks" : "No recommendations yet."}</h2>
+        <p className="text-muted-foreground">{emptyStateMessage}</p>
       </div>
     );
   }
@@ -55,16 +72,16 @@ export function MovieRecommendations({ recommendations, isLoading, error, onCard
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-headline font-semibold mb-6 text-primary flex items-center gap-2">
-        <Zap className="h-7 w-7 text-accent" /> Here are your picks!
+        <IconComponent className="h-7 w-7 text-accent" /> {title}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentRecommendations.map((movie, index) => (
           <MovieCard
-            key={`${movie.title}-${index}`}
+            key={`${movie.title}-${index}`} // Consider a more unique key if titles can repeat within a list
             movie={movie}
             index={index}
             onCardClick={onCardClick}
-            currentUserId={currentUserId} // Pass currentUserId to MovieCard
+            currentUserId={currentUserId}
           />
         ))}
       </div>

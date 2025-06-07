@@ -4,13 +4,14 @@
 import { generateContentRecommendations, GenerateContentRecommendationsInput } from "@/ai/flows/generate-movie-recommendations";
 import { analyzeWatchPatterns, AnalyzeWatchPatternsInput, AnalyzeWatchPatternsOutput } from "@/ai/flows/analyze-watch-patterns";
 import { fetchContentDetailsFromTmdb } from "@/services/tmdbService";
-import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem } from "./types";
+import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem, FetchGroupRecommendationsParams, UserProfileDataForGroupRecs } from "./types";
 
 interface FetchContentRecommendationsParams {
   mood: string;
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
   contentType: ContentType;
+  // userWeights are not directly used by generateContentRecommendations AI but kept for consistency if needed elsewhere
 }
 
 export async function fetchContentRecommendationsAction(
@@ -83,5 +84,58 @@ export async function analyzeWatchPatternsAction(
     console.error("Error analyzing watch patterns:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return { error: `Failed to analyze watch patterns: ${errorMessage}` };
+  }
+}
+
+
+export async function fetchGroupRecommendationsAction(
+  params: FetchGroupRecommendationsParams
+): Promise<MovieRecommendationItem[] | { error: string }> {
+  try {
+    // Fetch recommendations for User 1
+    const recs1Result = await fetchContentRecommendationsAction({
+      mood: params.user1Data.mood,
+      timeOfDay: params.user1Data.timeOfDay,
+      viewingHistory: params.user1Data.viewingHistory,
+      contentType: params.user1Data.contentType,
+    });
+
+    // Fetch recommendations for User 2
+    const recs2Result = await fetchContentRecommendationsAction({
+      mood: params.user2Data.mood,
+      timeOfDay: params.user2Data.timeOfDay,
+      viewingHistory: params.user2Data.viewingHistory,
+      contentType: params.user2Data.contentType,
+    });
+
+    if ('error' in recs1Result) return { error: `Error for User 1: ${recs1Result.error}` };
+    if ('error' in recs2Result) return { error: `Error for User 2: ${recs2Result.error}` };
+
+    const recs1 = recs1Result as MovieRecommendationItem[];
+    const recs2 = recs2Result as MovieRecommendationItem[];
+
+    // Find intersection based on title
+    const commonRecommendations: MovieRecommendationItem[] = [];
+    const titlesInRecs1 = new Set(recs1.map(rec => rec.title.toLowerCase().trim()));
+
+    for (const rec of recs2) {
+      if (titlesInRecs1.has(rec.title.toLowerCase().trim())) {
+        // To provide a reason for the group, we can combine or choose one.
+        // For simplicity, let's pick the reason from User 1's perspective if it's common.
+        const originalRec1 = recs1.find(r => r.title.toLowerCase().trim() === rec.title.toLowerCase().trim());
+        commonRecommendations.push({
+          ...rec, // Takes details from rec2 (poster, etc.)
+          // Optionally, craft a new reason or take one from User 1 or 2.
+          reason: `Common interest! User 1 reason: ${originalRec1?.reason}. User 2 reason: ${rec.reason}`,
+        });
+      }
+    }
+    
+    return commonRecommendations;
+
+  } catch (error) {
+    console.error("Error fetching group content recommendations:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { error: `Failed to fetch group content recommendations: ${errorMessage}` };
   }
 }

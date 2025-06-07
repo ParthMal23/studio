@@ -34,3 +34,19 @@ export interface WatchPatternAnalysis {
   moodWeight: number; // Percentage 0-100.
   historyWeight: number; // Percentage 0-100.
   contentMix: Array<{ genre: string; proportion: number }>; // e.g., [{
+}
+
+// For Group Recommendations
+export interface UserProfileDataForGroupRecs {
+  userId: string;
+  mood: Mood;
+  timeOfDay: TimeOfDay;
+  viewingHistory: ViewingHistoryEntry[];
+  userWeights: UserWeights;
+  contentType: ContentType;
+}
+
+export interface FetchGroupRecommendationsParams {
+  user1Data: UserProfileDataForGroupRecs;
+  user2Data: UserProfileDataForGroupRecs;
+}

@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType } from '@/lib/types';
-import { fetchContentRecommendationsAction } from '@/lib/actions';
+import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType, UserProfileDataForGroupRecs } from '@/lib/types';
+import { fetchContentRecommendationsAction, fetchGroupRecommendationsAction } from '@/lib/actions';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { AppHeader } from '@/components/AppHeader';
 import { MoodSelector } from '@/components/MoodSelector';
@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2, Users } from 'lucide-react';
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
@@ -40,6 +40,10 @@ export default function HomePage() {
   const [recommendations, setRecommendations] = useState<MovieRecommendationItem[]>([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
+
+  const [groupRecommendations, setGroupRecommendations] = useState<MovieRecommendationItem[]>([]);
+  const [isLoadingGroupRecommendations, setIsLoadingGroupRecommendations] = useState(false);
+  const [groupRecommendationError, setGroupRecommendationError] = useState<string | null>(null);
 
   const [pendingFeedbackItemForDialog, setPendingFeedbackItemForDialog] = useState<PendingFeedbackStorageItem | null>(null);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
@@ -113,10 +117,14 @@ export default function HomePage() {
         if (prefs.selectedTime) {
             setSelectedTime(prefs.selectedTime);
             setSelectedTimeManually(prefs.selectedTime);
+        } else if (detectedTime) { // If no stored time, use detected time
+            setSelectedTime(detectedTime);
         }
       } catch (e) {
         console.error(`Failed to parse preferences from localStorage for key ${LS_USER_PREFERENCES_KEY}:`, e);
       }
+    } else if (detectedTime) { // If no stored preferences at all, still set the detected time
+        setSelectedTime(detectedTime);
     }
     
     checkForPendingFeedback();
@@ -126,13 +134,15 @@ export default function HomePage() {
       window.removeEventListener('focus', checkForPendingFeedback);
     };
 
-  }, [currentUserId, isLoadingUser, setSelectedTimeManually, getDynamicStorageKey, checkForPendingFeedback]);
-
+  }, [currentUserId, isLoadingUser, setSelectedTimeManually, getDynamicStorageKey, checkForPendingFeedback, detectedTime]);
+  
+  // Ensure selectedTime is initialized with detectedTime if nothing is loaded from localStorage
   useEffect(() => {
     if (!selectedTime && detectedTime) {
         setSelectedTime(detectedTime);
     }
   }, [selectedTime, detectedTime]);
+
 
   useEffect(() => {
     if (!currentUserId || isLoadingUser) return;
@@ -158,7 +168,7 @@ export default function HomePage() {
     }
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
-    const result = await fetchContentRecommendationsAction({ mood, timeOfDay: selectedTime, viewingHistory, userWeights, contentType });
+    const result = await fetchContentRecommendationsAction({ mood, timeOfDay: selectedTime, viewingHistory, contentType });
     setIsLoadingRecommendations(false);
     if ('error' in result) {
       setRecommendationError(result.error);
@@ -172,7 +182,83 @@ export default function HomePage() {
         toast({ title: "Success", description: "Fresh recommendations are here!" });
       }
     }
-  }, [mood, selectedTime, viewingHistory, userWeights, contentType, toast, currentUserId]);
+  }, [mood, selectedTime, viewingHistory, contentType, toast, currentUserId]);
+
+
+  const loadUserProfileData = useCallback((userIdToLoad: string): UserProfileDataForGroupRecs | null => {
+    const historyKey = getDynamicStorageKey('fireSyncViewingHistory', userIdToLoad);
+    const prefsKey = getDynamicStorageKey('fireSyncUserPreferences', userIdToLoad);
+
+    if (!historyKey || !prefsKey) return null;
+
+    let userHistory: ViewingHistoryEntry[] = [];
+    let userMood: Mood = "Neutral";
+    let userSelectedTime: TimeOfDay | undefined = detectedTime || "Morning"; // Fallback to detected or Morning
+    let userPrefsWeights: UserWeights = { mood: 50, time: 25, history: 25 };
+    let userPrefsContentType: ContentType = "BOTH";
+
+    const storedHistory = localStorage.getItem(historyKey);
+    if (storedHistory) try { userHistory = JSON.parse(storedHistory); } catch (e) { console.error("Error parsing history for group", e); }
+
+    const storedPreferences = localStorage.getItem(prefsKey);
+    if (storedPreferences) {
+      try {
+        const prefs = JSON.parse(storedPreferences);
+        if (prefs.mood) userMood = prefs.mood;
+        if (prefs.userWeights) userPrefsWeights = prefs.userWeights;
+        if (prefs.contentType) userPrefsContentType = prefs.contentType;
+        if (prefs.selectedTime) userSelectedTime = prefs.selectedTime;
+      } catch (e) {
+        console.error("Error parsing prefs for group", e);
+      }
+    }
+    
+    if (!userSelectedTime) { // Ensure timeOfDay is set
+        userSelectedTime = detectedTime || "Morning";
+    }
+
+
+    return {
+      userId: userIdToLoad,
+      mood: userMood,
+      timeOfDay: userSelectedTime,
+      viewingHistory: userHistory,
+      userWeights: userPrefsWeights,
+      contentType: userPrefsContentType,
+    };
+  }, [getDynamicStorageKey, detectedTime]);
+
+  const handleGetGroupRecommendations = useCallback(async () => {
+    const user1Data = loadUserProfileData("user1");
+    const user2Data = loadUserProfileData("user2");
+
+    if (!user1Data || !user2Data) {
+      toast({ title: "Error loading user data", description: "Could not load data for one or both users.", variant: "destructive" });
+      return;
+    }
+    
+    // Ensure timeOfDay is defined for both, using current page's selectedTime as a fallback if a user has no stored time
+    // This step is now handled within loadUserProfileData's fallback logic using detectedTime.
+
+    setIsLoadingGroupRecommendations(true);
+    setGroupRecommendationError(null);
+    const result = await fetchGroupRecommendationsAction({ user1Data, user2Data });
+    setIsLoadingGroupRecommendations(false);
+
+    if ('error' in result) {
+      setGroupRecommendationError(result.error);
+      setGroupRecommendations([]);
+      toast({ title: "Group Recs Error", description: result.error, variant: "destructive" });
+    } else {
+      setGroupRecommendations(result);
+      if (result.length === 0) {
+        toast({ title: "No Common Group Recs", description: "No common recommendations found for User1 and User2 based on their individual preferences. Try adjusting their settings or watch histories." });
+      } else {
+        toast({ title: "Group Recs Success", description: "Found common recommendations for the group!" });
+      }
+    }
+  }, [loadUserProfileData, toast, selectedTime]);
+
 
   const handleTimeChange = (newTime: TimeOfDay) => {
     setSelectedTime(newTime);
@@ -181,7 +267,6 @@ export default function HomePage() {
 
   const handleCardClick = (movie: MovieRecommendationItem) => {
     // Logic is now primarily handled within MovieCard.tsx using sessionStorage.
-    // This function remains for potential future use or if direct page interaction is needed again.
   };
 
   const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
@@ -224,7 +309,11 @@ export default function HomePage() {
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
             <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !selectedTime} className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
               {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCw className="mr-2 h-5 w-5" />}
-              Get Recommendations
+              Get My Recommendations
+            </Button>
+            <Button onClick={handleGetGroupRecommendations} disabled={isLoadingGroupRecommendations} className="w-full text-lg py-6 bg-accent hover:bg-accent/90 text-accent-foreground">
+              {isLoadingGroupRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Users className="mr-2 h-5 w-5" />}
+              Get Group Recs (User1 & User2)
             </Button>
           </div>
 
@@ -235,7 +324,22 @@ export default function HomePage() {
               error={recommendationError}
               onCardClick={handleCardClick}
               currentUserId={currentUserId}
+              title="Here are your picks!"
             />
+            
+            { (groupRecommendations.length > 0 || isLoadingGroupRecommendations || groupRecommendationError) && <Separator className="my-8" /> }
+
+            <MovieRecommendations
+              recommendations={groupRecommendations}
+              isLoading={isLoadingGroupRecommendations}
+              error={groupRecommendationError}
+              onCardClick={handleCardClick}
+              currentUserId={currentUserId} // Group card clicks will use current user's session for feedback for now
+              title="Group Picks (User1 & User2)"
+              emptyStateMessage="No common group recommendations found. Try adjusting preferences!"
+              showWhenEmpty={isLoadingGroupRecommendations || !!groupRecommendationError || groupRecommendations.length > 0}
+            />
+
             <Separator className="my-8" />
             <ViewingHistoryTracker
               viewingHistory={viewingHistory}
