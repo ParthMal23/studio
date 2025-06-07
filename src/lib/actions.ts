@@ -10,7 +10,6 @@ interface FetchContentRecommendationsParams {
   mood: string;
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
-  // userWeights: UserWeights; // userWeights are not currently used in the prompt
   contentType: ContentType;
 }
 
@@ -19,7 +18,9 @@ export async function fetchContentRecommendationsAction(
 ): Promise<MovieRecommendationItem[] | { error: string }> {
   try {
     const viewingHistorySummary = params.viewingHistory.length > 0
-      ? `User has watched: ${params.viewingHistory.map(m => `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''})`).join(', ')}.`
+      ? `User has watched: ${params.viewingHistory.map(m =>
+          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''})`
+        ).join(', ')}.`
       : "User has no viewing history yet.";
 
     const input: GenerateContentRecommendationsInput = {
@@ -30,7 +31,7 @@ export async function fetchContentRecommendationsAction(
     };
 
     const recommendationsFromAI = await generateContentRecommendations(input);
-    
+
     if (!recommendationsFromAI) {
       return [];
     }
@@ -65,13 +66,13 @@ export async function analyzeWatchPatternsAction(
   params: AnalyzeWatchPatternsParams
 ): Promise<AnalyzeWatchPatternsOutput | { error: string }> {
   try {
+    // viewingHistory will now include timeOfDayAtWatch if present on entries
     const input: AnalyzeWatchPatternsInput = {
       viewingHistory: JSON.stringify(params.viewingHistory),
       currentMood: params.currentMood,
       currentTime: params.currentTime,
     };
     const analysis = await analyzeWatchPatterns(input);
-    // Ensure mandatory fields have defaults if AI somehow omits them (though schema should prevent this)
     return {
       explanation: analysis.explanation || "No explanation provided.",
       moodWeight: analysis.moodWeight === undefined ? 50 : analysis.moodWeight,

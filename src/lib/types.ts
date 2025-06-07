@@ -16,7 +16,8 @@ export interface ViewingHistoryEntry {
   title: string;
   rating: number; // 1-5
   completed: boolean;
-  moodAtWatch?: Mood; // Added mood at time of watching
+  moodAtWatch?: Mood;
+  timeOfDayAtWatch?: TimeOfDay; // Added time of day at watch
 }
 
 export interface MovieRecommendationItem {
@@ -32,6 +33,4 @@ export interface WatchPatternAnalysis {
   explanation: string;
   moodWeight: number; // Percentage 0-100.
   historyWeight: number; // Percentage 0-100.
-  contentMix: Array<{ genre: string; proportion: number }>; // e.g., [{ genre: "comedy", proportion: 0.6 }]. Empty array if not applicable.
-}
-
+  contentMix: Array<{ genre: string; proportion: number }>; // e.g., [{

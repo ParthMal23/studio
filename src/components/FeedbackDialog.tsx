@@ -1,15 +1,14 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Mood, ViewingHistoryEntry } from '@/lib/types';
+import type { Mood, ViewingHistoryEntry, TimeOfDay } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Star } from 'lucide-react';
+import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Star, Clock } from 'lucide-react';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
@@ -34,9 +33,10 @@ interface FeedbackDialogProps {
   onClose: () => void;
   onSubmit: (feedback: Omit<ViewingHistoryEntry, 'id'>) => void;
   movieItem: PendingFeedbackStorageItem | null;
+  currentTimeOfDayAtWatch: TimeOfDay | undefined; // To capture the time of day when feedback is initiated
 }
 
-export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem }: FeedbackDialogProps) {
+export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTimeOfDayAtWatch }: FeedbackDialogProps) {
   const [rating, setRating] = useState(3);
   const [moodAtWatch, setMoodAtWatch] = useState<Mood | undefined>(undefined);
   const [completed, setCompleted] = useState(true);
@@ -58,6 +58,7 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem }: Feedbac
       rating: rating,
       completed: completed,
       moodAtWatch: moodAtWatch,
+      timeOfDayAtWatch: currentTimeOfDayAtWatch, // Add the time of day
     });
   };
 
@@ -71,6 +72,12 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem }: Feedbac
           </DialogTitle>
           <DialogDescription>
             How was your experience with <span className="font-semibold text-primary">{movieItem.title}</span>?
+            {currentTimeOfDayAtWatch && (
+              <span className="block text-xs text-muted-foreground mt-1">
+                <Clock className="inline h-3 w-3 mr-1" />
+                Noting this for {currentTimeOfDayAtWatch}.
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

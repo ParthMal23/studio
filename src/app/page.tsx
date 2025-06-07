@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
 import { ViewingHistoryTracker } from '@/components/ViewingHistoryTracker';
-import { FeedbackDialog } from '@/components/FeedbackDialog'; // New component
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +23,6 @@ const LS_VIEWING_HISTORY_KEY = 'fireSyncViewingHistory';
 const LS_USER_PREFERENCES_KEY = 'fireSyncUserPreferences';
 const SS_PENDING_FEEDBACK_KEY = 'pendingFeedbackItem';
 
-// Define a type for the item stored in sessionStorage for feedback
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
 
@@ -55,10 +53,10 @@ export default function HomePage() {
         const item: PendingFeedbackStorageItem = JSON.parse(storedItem);
         setPendingFeedbackItemForDialog(item);
         setIsFeedbackDialogOpen(true);
-        sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); // Clear after processing
+        sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); 
       } catch (e) {
         console.error("Failed to parse pending feedback item from sessionStorage", e);
-        sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); // Clear if parsing fails
+        sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); 
       }
     }
   }, [isMounted]);
@@ -82,41 +80,46 @@ export default function HomePage() {
         if (prefs.mood) setMood(prefs.mood);
         if (prefs.userWeights) setUserWeights(prefs.userWeights);
         if (prefs.contentType) setContentType(prefs.contentType);
-        if (prefs.selectedTime) setSelectedTime(prefs.selectedTime);
+        // selectedTime is handled by its own useEffect to prioritize detectedTime initially if no stored pref
       } catch (e) {
         console.error("Failed to parse preferences from localStorage", e);
       }
     }
     
-    checkForPendingFeedback(); // Check on initial mount
-    window.addEventListener('focus', checkForPendingFeedback); // Check when tab regains focus
+    checkForPendingFeedback(); 
+    window.addEventListener('focus', checkForPendingFeedback); 
 
     return () => {
       window.removeEventListener('focus', checkForPendingFeedback);
     };
 
-  }, [checkForPendingFeedback]); // Add checkForPendingFeedback to dependency array
+  }, [checkForPendingFeedback]); 
 
   useEffect(() => {
     if (!isMounted) return;
-    if (selectedTime === undefined && detectedTime !== undefined) {
-      const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
-      if (storedPreferences) {
+    // This effect now runs after initial preference load.
+    // It prioritizes detectedTime if no selectedTime is stored,
+    // otherwise, it loads the stored selectedTime.
+    const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
+    let timeFromStorage: TimeOfDay | undefined = undefined;
+    if (storedPreferences) {
         try {
-          const prefs = JSON.parse(storedPreferences);
-          if (prefs.hasOwnProperty('selectedTime') && prefs.selectedTime !== undefined) {
-            // localStorage had a selectedTime, it should have been set.
-          } else {
-             setSelectedTime(detectedTime);
-          }
-        } catch (e) { 
-           setSelectedTime(detectedTime);
+            const prefs = JSON.parse(storedPreferences);
+            if (prefs.selectedTime) {
+                timeFromStorage = prefs.selectedTime;
+            }
+        } catch (e) {
+            // error parsing, ignore
         }
-      } else {
-        setSelectedTime(detectedTime);
-      }
     }
-  }, [isMounted, detectedTime, selectedTime]);
+
+    if (timeFromStorage) {
+        setSelectedTime(timeFromStorage);
+        setSelectedTimeManually(timeFromStorage); // also set it in the hook
+    } else if (detectedTime !== undefined) {
+        setSelectedTime(detectedTime);
+    }
+  }, [isMounted, detectedTime, setSelectedTimeManually]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -154,13 +157,12 @@ export default function HomePage() {
   };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {
-    // This function could be used for other future interactions if needed
     // console.log("Card clicked, preparing for potential feedback:", movie.title);
   };
 
   const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
     const newEntry: ViewingHistoryEntry = {
-      ...feedback,
+      ...feedback, // This will include title, rating, completed, moodAtWatch, and timeOfDayAtWatch from FeedbackDialog
       id: Date.now().toString(),
     };
     setViewingHistory(prevHistory => [...prevHistory, newEntry]);
@@ -197,7 +199,7 @@ export default function HomePage() {
               recommendations={recommendations}
               isLoading={isLoadingRecommendations}
               error={recommendationError}
-              onCardClick={handleCardClick} // Pass the handler
+              onCardClick={handleCardClick}
             />
             <Separator className="my-8" />
             {isMounted ? (
@@ -205,7 +207,7 @@ export default function HomePage() {
                 viewingHistory={viewingHistory}
                 onHistoryChange={setViewingHistory}
                 currentMood={mood}
-                currentTime={selectedTime}
+                currentTime={selectedTime} // Pass current selected time for manual adds
               />
             ) : (
               <Card className="shadow-lg">
@@ -224,6 +226,7 @@ export default function HomePage() {
           }}
           onSubmit={handleFeedbackSubmit}
           movieItem={pendingFeedbackItemForDialog}
+          currentTimeOfDayAtWatch={selectedTime} // Pass current selected time
         />
       )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">

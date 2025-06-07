@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood } from '@/lib/types';
+import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood, TimeOfDay } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Clock } from 'lucide-react';
 import Papa from 'papaparse';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
@@ -27,8 +27,8 @@ const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType 
 interface ViewingHistoryTrackerProps {
   viewingHistory: ViewingHistoryEntry[];
   onHistoryChange: (history: ViewingHistoryEntry[]) => void;
-  currentMood: string; // This is the user's current mood for analysis, not mood at watch
-  currentTime: string | undefined;
+  currentMood: Mood;
+  currentTime: TimeOfDay | undefined;
 }
 
 export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, currentMood, currentTime }: ViewingHistoryTrackerProps) {
@@ -36,6 +36,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
   const [newMovieRating, setNewMovieRating] = useState(3);
   const [newMovieCompleted, setNewMovieCompleted] = useState(true);
   const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(undefined);
+  // Time of day for manual add will use the `currentTime` prop
   const [analysisResult, setAnalysisResult] = useState<WatchPatternAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
@@ -52,6 +53,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       rating: newMovieRating,
       completed: newMovieCompleted,
       moodAtWatch: newMovieMoodAtWatch,
+      timeOfDayAtWatch: currentTime, // Add current time of day
     };
     onHistoryChange([...viewingHistory, newEntry]);
     setNewMovieTitle('');
@@ -102,12 +104,12 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
         results.data.forEach((row, index) => {
           const title = row['Title'] || row['title'];
           if (title) {
+            // CSV imports won't have mood or time of day at watch initially
             newEntries.push({
               id: `${Date.now()}-${index}`,
               title: title.trim(),
-              rating: 3, // Default rating
-              completed: true, // Default completed status
-              // moodAtWatch will be undefined for CSV imports initially
+              rating: 3,
+              completed: true,
             });
           }
         });
@@ -138,7 +140,9 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <History className="h-6 w-6" /> Your Viewing History
           </CardTitle>
-          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.</CardDescription>
+          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.
+            {currentTime && <span className="block text-xs mt-1">Items added manually will note time as <Clock className="inline h-3 w-3 mr-0.5" /> {currentTime}.</span>}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -223,6 +227,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                       Rating: {"⭐".repeat(item.rating)}{" "}
                       ({item.completed ? "Completed" : "Not Completed"})
                       {item.moodAtWatch && `, Mood: ${item.moodAtWatch}`}
+                      {item.timeOfDayAtWatch && `, Time: ${item.timeOfDayAtWatch}`}
                     </p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleRemoveMovie(item.id)} aria-label="Remove item">
