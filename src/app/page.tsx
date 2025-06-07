@@ -17,6 +17,7 @@ import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Loader2, Users, LogOut } from 'lucide-react';
 
@@ -43,9 +44,14 @@ export default function HomePage() {
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
 
+  // Group Recommendations State
   const [groupRecommendations, setGroupRecommendations] = useState<MovieRecommendationItem[]>([]);
   const [isLoadingGroupRecommendations, setIsLoadingGroupRecommendations] = useState(false);
   const [groupRecommendationError, setGroupRecommendationError] = useState<string | null>(null);
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+  const [potentialGroupPartnerId, setPotentialGroupPartnerId] = useState<string | null>(null);
+  const [groupRecsTitle, setGroupRecsTitle] = useState<string>("Group Picks");
+
 
   const [pendingFeedbackItemForDialog, setPendingFeedbackItemForDialog] = useState<PendingFeedbackStorageItem | null>(null);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
@@ -224,18 +230,25 @@ export default function HomePage() {
     };
   }, [getDynamicStorageKey, detectedTime]);
 
-  const handleGetGroupRecommendations = useCallback(async () => {
-    const user1Data = loadUserProfileData("user1");
-    const user2Data = loadUserProfileData("user2");
+  const handleFetchGroupRecommendations = useCallback(async () => {
+    if (!currentUserId || !potentialGroupPartnerId) {
+      toast({ title: "Group Error", description: "Current user or group partner not selected.", variant: "destructive" });
+      return;
+    }
 
-    if (!user1Data || !user2Data) {
-      toast({ title: "Error loading user data", description: "Could not load data for one or both users.", variant: "destructive" });
+    setIsGroupDialogOpen(false); // Close dialog on fetch
+
+    const user1Data = loadUserProfileData(currentUserId);
+    const partnerData = loadUserProfileData(potentialGroupPartnerId);
+
+    if (!user1Data || !partnerData) {
+      toast({ title: "Error loading user data", description: "Could not load data for one or both users in the group.", variant: "destructive" });
       return;
     }
     
     setIsLoadingGroupRecommendations(true);
     setGroupRecommendationError(null);
-    const result = await fetchGroupRecommendationsAction({ user1Data, user2Data });
+    const result = await fetchGroupRecommendationsAction({ user1Data, user2Data: partnerData });
     setIsLoadingGroupRecommendations(false);
 
     if ('error' in result) {
@@ -244,18 +257,21 @@ export default function HomePage() {
       toast({ title: "Group Recs Error", description: result.error, variant: "destructive" });
     } else {
       setGroupRecommendations(result);
+      const partnerName = potentialGroupPartnerId === 'user1' ? 'User 1' : 'User 2';
+      setGroupRecsTitle(`Picks for You and ${partnerName}`);
       if (result.length === 0) {
         toast({ title: "No Group Recommendations", description: "Could not find common or compromise recommendations. Try adjusting preferences." });
       } else {
         const hasCommonPick = result.some(rec => rec.reason?.startsWith(COMMON_RECOMMENDATION_REASON_PREFIX));
         if (hasCommonPick) {
-            toast({ title: "Group Recs Success!", description: "Found recommendations including common picks for the group!" });
+            toast({ title: "Group Recs Success!", description: `Found recommendations including common picks for you and ${partnerName}!` });
         } else {
-            toast({ title: "Group Recs Found!", description: "Found some compromise recommendations for the group." });
+            toast({ title: "Group Recs Found!", description: `Found some compromise recommendations for you and ${partnerName}.` });
         }
       }
     }
-  }, [loadUserProfileData, toast]);
+    setPotentialGroupPartnerId(null); // Reset selection
+  }, [currentUserId, potentialGroupPartnerId, loadUserProfileData, toast]);
 
 
   const handleTimeChange = (newTime: TimeOfDay) => {
@@ -294,6 +310,9 @@ export default function HomePage() {
       </div>
     );
   }
+  
+  const otherUserButtonId = currentUserId === 'user1' ? 'user2' : 'user1';
+  const otherUserButtonLabel = currentUserId === 'user1' ? 'User 2' : 'User 1';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -309,10 +328,44 @@ export default function HomePage() {
               {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCw className="mr-2 h-5 w-5" />}
               Get My Recommendations
             </Button>
-            <Button onClick={handleGetGroupRecommendations} disabled={isLoadingGroupRecommendations} className="w-full text-lg py-6 bg-accent hover:bg-accent/90 text-accent-foreground">
-              {isLoadingGroupRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Users className="mr-2 h-5 w-5" />}
-              Get Group Recs (User1 & User2)
-            </Button>
+            
+            <Dialog open={isGroupDialogOpen} onOpenChange={(isOpen) => {
+                setIsGroupDialogOpen(isOpen);
+                if (!isOpen) setPotentialGroupPartnerId(null); // Reset on close
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full text-lg py-6 border-accent text-accent hover:border-accent/80 hover:text-accent/80 hover:bg-accent/10">
+                  <Users className="mr-2 h-5 w-5" />
+                  Watch with a Friend
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Select User to Watch With</DialogTitle>
+                  <DialogDescription>
+                    Choose who you'd like to get group recommendations with.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-2">
+                  <p className="text-sm text-muted-foreground">You are: <span className="font-semibold text-primary">{currentUserId}</span></p>
+                  <Button 
+                    variant={potentialGroupPartnerId === otherUserButtonId ? 'default' : 'outline'} 
+                    onClick={() => setPotentialGroupPartnerId(otherUserButtonId)}
+                    className="w-full"
+                  >
+                    {otherUserButtonLabel}
+                  </Button>
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => { setIsGroupDialogOpen(false); setPotentialGroupPartnerId(null); }}>Cancel</Button>
+                  <Button onClick={handleFetchGroupRecommendations} disabled={!potentialGroupPartnerId || isLoadingGroupRecommendations}>
+                    {isLoadingGroupRecommendations ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Get Group Recommendations
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
           </div>
 
           <div className="lg:col-span-2 space-y-6">
@@ -333,8 +386,8 @@ export default function HomePage() {
               error={groupRecommendationError}
               onCardClick={handleCardClick}
               currentUserId={currentUserId} 
-              title="Group Picks (User1 & User2)"
-              emptyStateMessage="No group recommendations could be found. Try adjusting preferences or watch histories."
+              title={groupRecsTitle}
+              emptyStateMessage="No group recommendations found. Try adjusting preferences or watch histories."
               showWhenEmpty={isLoadingGroupRecommendations || !!groupRecommendationError || groupRecommendations.length > 0}
             />
 
@@ -366,5 +419,6 @@ export default function HomePage() {
     </div>
   );
 }
-
     
+
+      
