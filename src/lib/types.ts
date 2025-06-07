@@ -24,12 +24,14 @@ export interface MovieRecommendationItem {
   description: string;
   reason: string;
   platform: string;
-  posterUrl?: string; // Added for TMDB poster
+  posterUrl?: string;
+  watchUrl?: string; // Link to TMDB watch page or similar
 }
 
 export interface WatchPatternAnalysis {
   explanation: string;
-  moodWeight: number; // Percentage 0-100. Default to 50 if not applicable.
-  historyWeight: number; // Percentage 0-100. Default to 50 if not applicable.
+  moodWeight: number; // Percentage 0-100.
+  historyWeight: number; // Percentage 0-100.
   contentMix: Array<{ genre: string; proportion: number }>; // e.g., [{ genre: "comedy", proportion: 0.6 }]. Empty array if not applicable.
 }
+

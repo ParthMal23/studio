@@ -3,17 +3,25 @@
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'; // w500 is a common poster size
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 interface TmdbSearchResult {
   id: number;
   poster_path?: string | null;
-  media_type?: 'movie' | 'tv'; // From 'multi' search
-  // Add other fields if needed in the future
+  media_type?: 'movie' | 'tv';
+  // For movie results directly
+  title?: string;
+  // For TV results directly
+  name?: string;
 }
 
 interface TmdbSearchResponse {
   results: TmdbSearchResult[];
+}
+
+interface ContentDetails {
+  posterUrl?: string;
+  watchUrl?: string;
 }
 
 async function fetchFromTmdb<T>(endpoint: string, queryParams: Record<string, string> = {}): Promise<T | null> {
@@ -42,26 +50,36 @@ async function fetchFromTmdb<T>(endpoint: string, queryParams: Record<string, st
   }
 }
 
-export async function fetchPosterUrl(
+export async function fetchContentDetailsFromTmdb(
   title: string,
   contentType: 'MOVIES' | 'TV_SERIES' | 'BOTH'
-): Promise<string | undefined> {
-  let searchType: 'movie' | 'tv' | 'multi' = 'multi';
+): Promise<ContentDetails> {
+  let searchPath: 'search/movie' | 'search/tv' | 'search/multi' = 'search/multi';
+  let effectiveMediaType: 'movie' | 'tv' | undefined;
+
   if (contentType === 'MOVIES') {
-    searchType = 'movie';
+    searchPath = 'search/movie';
+    effectiveMediaType = 'movie';
   } else if (contentType === 'TV_SERIES') {
-    searchType = 'tv';
+    searchPath = 'search/tv';
+    effectiveMediaType = 'tv';
   }
 
-  const data = await fetchFromTmdb<TmdbSearchResponse>(`search/${searchType}`, { query: title });
+  const data = await fetchFromTmdb<TmdbSearchResponse>(searchPath, { query: title });
+
+  const details: ContentDetails = {};
 
   if (data && data.results && data.results.length > 0) {
-    // For 'multi' search, prefer the item that matches the broader type or just take the first good one.
-    // For specific 'movie' or 'tv' search, the first result is usually best.
     const result = data.results[0];
+
     if (result.poster_path) {
-      return `${TMDB_IMAGE_BASE_URL}${result.poster_path}`;
+      details.posterUrl = `${TMDB_IMAGE_BASE_URL}${result.poster_path}`;
+    }
+
+    const mediaTypeForResult = result.media_type || effectiveMediaType;
+    if (result.id && mediaTypeForResult) {
+      details.watchUrl = `https://www.themoviedb.org/${mediaTypeForResult}/${result.id}/watch?locale=US`;
     }
   }
-  return undefined;
+  return details;
 }

@@ -1,16 +1,16 @@
 
 "use server";
 
-import { generateContentRecommendations, GenerateContentRecommendationsInput, GenerateContentRecommendationsOutput } from "@/ai/flows/generate-movie-recommendations";
+import { generateContentRecommendations, GenerateContentRecommendationsInput } from "@/ai/flows/generate-movie-recommendations";
 import { analyzeWatchPatterns, AnalyzeWatchPatternsInput, AnalyzeWatchPatternsOutput } from "@/ai/flows/analyze-watch-patterns";
-import { fetchPosterUrl } from "@/services/tmdbService";
-import type { UserWeights, ViewingHistoryEntry, ContentType, WatchPatternAnalysis, MovieRecommendationItem } from "./types";
+import { fetchContentDetailsFromTmdb } from "@/services/tmdbService";
+import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem } from "./types";
 
 interface FetchContentRecommendationsParams {
   mood: string;
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
-  userWeights: UserWeights;
+  // userWeights: UserWeights; // userWeights are not currently used in the prompt
   contentType: ContentType;
 }
 
@@ -35,15 +35,18 @@ export async function fetchContentRecommendationsAction(
       return [];
     }
 
-    // Augment recommendations with poster URLs from TMDB
-    const recommendationsWithPosters: MovieRecommendationItem[] = await Promise.all(
+    const recommendationsWithDetails: MovieRecommendationItem[] = await Promise.all(
       recommendationsFromAI.map(async (rec) => {
-        const posterUrl = await fetchPosterUrl(rec.title, params.contentType);
-        return { ...rec, posterUrl };
+        const tmdbDetails = await fetchContentDetailsFromTmdb(rec.title, params.contentType);
+        return {
+          ...rec,
+          posterUrl: tmdbDetails.posterUrl,
+          watchUrl: tmdbDetails.watchUrl,
+        };
       })
     );
 
-    return recommendationsWithPosters;
+    return recommendationsWithDetails;
 
   } catch (error) {
     console.error("Error fetching content recommendations:", error);
@@ -68,9 +71,9 @@ export async function analyzeWatchPatternsAction(
       currentTime: params.currentTime,
     };
     const analysis = await analyzeWatchPatterns(input);
-    // Ensure default values if AI doesn't provide them, to match the non-optional schema.
+    // Ensure mandatory fields have defaults if AI somehow omits them (though schema should prevent this)
     return {
-      explanation: analysis.explanation || "No specific explanation provided.",
+      explanation: analysis.explanation || "No explanation provided.",
       moodWeight: analysis.moodWeight === undefined ? 50 : analysis.moodWeight,
       historyWeight: analysis.historyWeight === undefined ? 50 : analysis.historyWeight,
       contentMix: analysis.contentMix || [],

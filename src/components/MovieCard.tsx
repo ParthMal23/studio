@@ -15,9 +15,13 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
-    const searchTerm = movie.title;
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
-    window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
+    if (movie.watchUrl) {
+      window.open(movie.watchUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      const searchTerm = movie.title;
+      const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
+      window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
+    }
 
     if (onCardClick) {
       onCardClick(movie);
@@ -42,27 +46,28 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"
       tabIndex={0}
+      aria-label={`View details for ${movie.title}${movie.watchUrl ? ' on TMDB' : ' on Google'}`}
     >
-      <CardHeader className="p-0 relative aspect-[2/3] bg-muted/30"> {/* Aspect ratio for posters */}
+      <CardHeader className="p-0 relative aspect-[2/3] bg-muted/30">
         {movie.posterUrl ? (
           <Image
             src={movie.posterUrl}
             alt={`Poster for ${movie.title}`}
-            width={600} // Intrinsic width, will be scaled by CSS
-            height={900} // Intrinsic height, will be scaled by CSS
+            width={600}
+            height={900}
             className="w-full h-full object-cover"
-            priority={index < 3} // Prioritize loading for the first few images
+            priority={index < 3}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
             <ImageOff className="w-16 h-16 mb-2" />
             <span className="text-xs">No Poster Available</span>
             <Image
-              src="https://placehold.co/600x400.png" // Fallback, hidden but keeps structure
+              src="https://placehold.co/600x900.png" 
               alt=""
               width={600}
-              height={400}
-              className="w-0 h-0 absolute" // Hide placeholder but keep for layout consistency if needed.
+              height={900}
+              className="w-0 h-0 absolute" 
               data-ai-hint={aiHint}
             />
           </div>
