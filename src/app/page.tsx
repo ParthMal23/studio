@@ -20,19 +20,17 @@ import { RefreshCw, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// --- Mock User ID for simulation ---
-const MOCK_USER_ID = "defaultUser"; // In a real app, this would come from an auth system.
+const MOCK_USER_ID = "defaultUser"; 
 
-// --- User-specific localStorage keys ---
 const LS_VIEWING_HISTORY_KEY = `fireSyncViewingHistory_${MOCK_USER_ID}`;
 const LS_USER_PREFERENCES_KEY = `fireSyncUserPreferences_${MOCK_USER_ID}`;
-const SS_PENDING_FEEDBACK_KEY = `pendingFeedbackItem_${MOCK_USER_ID}`; // Also make session storage key user-specific if desired, or keep global
+const SS_PENDING_FEEDBACK_KEY = `pendingFeedbackItem_${MOCK_USER_ID}`;
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
-
 export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [currentYear, setCurrentYear] = useState<string | number>('...');
 
   const [mood, setMood] = useState<Mood>("Neutral");
   const { currentTimeOfDay: detectedTime, setCurrentTimeOfDay: setSelectedTimeManually } = useTimeOfDay();
@@ -51,7 +49,7 @@ export default function HomePage() {
   const { toast } = useToast();
 
   const checkForPendingFeedback = useCallback(() => {
-    if (!isMounted) return;
+    if (typeof window === 'undefined') return;
     const storedItem = sessionStorage.getItem(SS_PENDING_FEEDBACK_KEY);
     if (storedItem) {
       try {
@@ -64,10 +62,11 @@ export default function HomePage() {
         sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY); 
       }
     }
-  }, [isMounted]);
+  }, []);
 
   useEffect(() => {
     setIsMounted(true); 
+    setCurrentYear(new Date().getFullYear());
 
     const storedHistory = localStorage.getItem(LS_VIEWING_HISTORY_KEY);
     if (storedHistory) {
@@ -85,7 +84,10 @@ export default function HomePage() {
         if (prefs.mood) setMood(prefs.mood);
         if (prefs.userWeights) setUserWeights(prefs.userWeights);
         if (prefs.contentType) setContentType(prefs.contentType);
-        // selectedTime is handled by its own useEffect
+        if (prefs.selectedTime) {
+            setSelectedTime(prefs.selectedTime);
+            setSelectedTimeManually(prefs.selectedTime); 
+        }
       } catch (e) {
         console.error(`Failed to parse preferences from localStorage for key ${LS_USER_PREFERENCES_KEY}:`, e);
       }
@@ -98,30 +100,13 @@ export default function HomePage() {
       window.removeEventListener('focus', checkForPendingFeedback);
     };
 
-  }, [checkForPendingFeedback]); 
+  }, [checkForPendingFeedback, setSelectedTimeManually]); 
 
   useEffect(() => {
-    if (!isMounted) return;
-    const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
-    let timeFromStorage: TimeOfDay | undefined = undefined;
-    if (storedPreferences) {
-        try {
-            const prefs = JSON.parse(storedPreferences);
-            if (prefs.selectedTime) {
-                timeFromStorage = prefs.selectedTime;
-            }
-        } catch (e) {
-            // error parsing, ignore
-        }
-    }
-
-    if (timeFromStorage) {
-        setSelectedTime(timeFromStorage);
-        setSelectedTimeManually(timeFromStorage); 
-    } else if (detectedTime !== undefined) {
+    if (isMounted && !selectedTime && detectedTime) {
         setSelectedTime(detectedTime);
     }
-  }, [isMounted, detectedTime, setSelectedTimeManually]);
+  }, [isMounted, selectedTime, detectedTime]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -137,7 +122,6 @@ export default function HomePage() {
     }
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
-    // In a real app with auth, userId would be passed here or determined server-side
     const result = await fetchContentRecommendationsAction({ mood, timeOfDay: selectedTime, viewingHistory, userWeights, contentType });
     setIsLoadingRecommendations(false);
     if ('error' in result) {
@@ -166,7 +150,7 @@ export default function HomePage() {
   const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
     const newEntry: ViewingHistoryEntry = {
       ...feedback, 
-      id: Date.now().toString(),
+      id: Date.now().toString(), // Date.now() is fine for mock ID here
     };
     setViewingHistory(prevHistory => [...prevHistory, newEntry]);
     setIsFeedbackDialogOpen(false);
@@ -182,13 +166,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
             <MoodSelector selectedMood={mood} onMoodChange={setMood} />
-            {isMounted ? (
-              <TimeSelector selectedTime={selectedTime} onTimeChange={handleTimeChange} />
-            ) : (
-              <Card className="shadow-lg">
-                <Skeleton className="h-48 w-full" />
-              </Card>
-            )}
+            <TimeSelector selectedTime={selectedTime} onTimeChange={handleTimeChange} />
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
             <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !selectedTime || !isMounted} className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
@@ -205,18 +183,12 @@ export default function HomePage() {
               onCardClick={handleCardClick}
             />
             <Separator className="my-8" />
-            {isMounted ? (
-              <ViewingHistoryTracker
-                viewingHistory={viewingHistory}
-                onHistoryChange={setViewingHistory}
-                currentMood={mood}
-                currentTime={selectedTime} 
-              />
-            ) : (
-              <Card className="shadow-lg">
-                <Skeleton className="h-72 w-full" />
-              </Card>
-            )}
+            <ViewingHistoryTracker
+              viewingHistory={viewingHistory}
+              onHistoryChange={setViewingHistory}
+              currentMood={mood}
+              currentTime={selectedTime} 
+            />
           </div>
         </div>
       </main>
@@ -233,7 +205,7 @@ export default function HomePage() {
         />
       )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
-        FireSync &copy; {isMounted ? new Date().getFullYear() : '...'} - Your Personal Content Guide (User: {MOCK_USER_ID})
+        FireSync &copy; {currentYear} - Your Personal Content Guide (User: {MOCK_USER_ID})
       </footer>
     </div>
   );
