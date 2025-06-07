@@ -401,8 +401,8 @@ export default function HomePage() {
             <ViewingHistoryTracker
               viewingHistory={viewingHistory}
               onHistoryChange={setViewingHistory}
-              currentMood={mood}
-              currentTime={selectedTime}
+              currentMood={mood} // Pass currentMood for manual add
+              currentTime={selectedTime} // Pass selectedTime for manual add
             />
           </div>
         </div>
@@ -417,6 +417,7 @@ export default function HomePage() {
           onSubmit={handleFeedbackSubmit}
           movieItem={pendingFeedbackItemForDialog}
           currentTimeOfDayAtWatch={selectedTime}
+          initialMoodAtWatch={mood} // Pass current page mood as initial mood
         />
       )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
@@ -429,3 +430,6 @@ export default function HomePage() {
 
       
 
+
+
+    

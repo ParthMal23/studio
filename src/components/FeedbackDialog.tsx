@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -33,22 +34,24 @@ interface FeedbackDialogProps {
   onClose: () => void;
   onSubmit: (feedback: Omit<ViewingHistoryEntry, 'id'>) => void;
   movieItem: PendingFeedbackStorageItem | null;
-  currentTimeOfDayAtWatch: TimeOfDay | undefined; // To capture the time of day when feedback is initiated
+  currentTimeOfDayAtWatch: TimeOfDay | undefined;
+  initialMoodAtWatch?: Mood; // New prop for initial mood
 }
 
-export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTimeOfDayAtWatch }: FeedbackDialogProps) {
+export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTimeOfDayAtWatch, initialMoodAtWatch }: FeedbackDialogProps) {
   const [rating, setRating] = useState(3);
-  const [moodAtWatch, setMoodAtWatch] = useState<Mood | undefined>(undefined);
+  const [moodAtWatch, setMoodAtWatch] = useState<Mood | undefined>(initialMoodAtWatch || undefined);
   const [completed, setCompleted] = useState(true);
 
   useEffect(() => {
     // Reset form when dialog opens or movieItem changes
     if (isOpen) {
       setRating(3);
-      setMoodAtWatch(undefined);
+      // Set moodAtWatch to initialMoodAtWatch if provided, otherwise undefined
+      setMoodAtWatch(initialMoodAtWatch || undefined);
       setCompleted(true);
     }
-  }, [isOpen, movieItem]);
+  }, [isOpen, movieItem, initialMoodAtWatch]);
 
   if (!movieItem) return null;
 
@@ -58,7 +61,7 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
       rating: rating,
       completed: completed,
       moodAtWatch: moodAtWatch,
-      timeOfDayAtWatch: currentTimeOfDayAtWatch, // Add the time of day
+      timeOfDayAtWatch: currentTimeOfDayAtWatch, 
     });
   };
 
@@ -99,12 +102,12 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
             <Label htmlFor="moodAtWatch" className="text-right col-span-1">
               Mood
             </Label>
-            <Select value={moodAtWatch} onValueChange={(value) => setMoodAtWatch(value as Mood)}>
+            <Select value={moodAtWatch} onValueChange={(value) => setMoodAtWatch(value === "undefined" ? undefined : value as Mood)}>
               <SelectTrigger id="moodAtWatch" className="col-span-3">
                 <SelectValue placeholder="Select mood when watched" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="undefined">None</SelectItem>
+                <SelectItem value="undefined">None (Optional)</SelectItem>
                 {moodsForSelection.map((mood) => (
                   <SelectItem key={mood.value} value={mood.value}>
                     <div className="flex items-center gap-2">
@@ -140,3 +143,5 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
     </Dialog>
   );
 }
+
+    
