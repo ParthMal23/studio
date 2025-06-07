@@ -16,7 +16,7 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
 
   const handleCardInteraction = () => {
     // Open Google search in a new tab
-    const searchTerm = `${movie.title} movie`; // You can refine this, e.g., add "TV series" based on type
+    const searchTerm = movie.title; // Removed " movie" suffix
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
 
@@ -64,3 +64,4 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     </Card>
   );
 }
+
