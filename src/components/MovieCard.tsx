@@ -1,3 +1,4 @@
+
 import type { MovieRecommendationItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
@@ -7,26 +8,31 @@ import { Badge } from '@/components/ui/badge';
 interface MovieCardProps {
   movie: MovieRecommendationItem;
   index: number;
-  onCardClick?: (movie: MovieRecommendationItem) => void; // Made optional as feedback dialog is removed
+  onCardClick?: (movie: MovieRecommendationItem) => void;
 }
 
 export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
+    // Open Google search in a new tab
+    const searchTerm = `${movie.title} movie`; // You can refine this, e.g., add "TV series" based on type
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
+    window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
+
     if (onCardClick) {
       onCardClick(movie);
     }
   };
 
   return (
-    <Card 
-      className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out animate-fade-in-up bg-card"
+    <Card
+      className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out animate-fade-in-up bg-card cursor-pointer"
       style={{ animationDelay }}
-      onClick={handleCardInteraction} // Simple click handler now
+      onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
-      role="button" // Added role for accessibility
-      tabIndex={0} // Added tabIndex for accessibility
+      role="button"
+      tabIndex={0}
     >
       <CardHeader className="p-0 relative">
         <Image
