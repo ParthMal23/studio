@@ -25,6 +25,22 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     }
   };
 
+  // Generate a more specific data-ai-hint from the movie title
+  const getAiHint = (title: string): string => {
+    // Remove punctuation that might interfere, take first part if colon exists
+    const cleanedTitle = title.split(':')[0].replace(/[^\w\s]/gi, '').trim();
+    const words = cleanedTitle.split(/\s+/).filter(Boolean);
+    if (words.length === 1) {
+      return words[0].toLowerCase();
+    }
+    if (words.length >= 2) {
+      return words.slice(0, 2).join(' ').toLowerCase();
+    }
+    return "movie poster"; // Fallback
+  };
+
+  const aiHint = getAiHint(movie.title);
+
   return (
     <Card
       className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out animate-fade-in-up bg-card cursor-pointer"
@@ -41,7 +57,7 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
           width={600}
           height={400}
           className="w-full h-48 object-cover"
-          data-ai-hint="movie poster"
+          data-ai-hint={aiHint}
         />
       </CardHeader>
       <CardContent className="p-4 flex-grow">
@@ -64,3 +80,4 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
     </Card>
   );
 }
+
