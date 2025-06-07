@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Loader2, Users } from 'lucide-react';
+import { RefreshCw, Loader2, Users, LogOut } from 'lucide-react';
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
@@ -117,13 +117,13 @@ export default function HomePage() {
         if (prefs.selectedTime) {
             setSelectedTime(prefs.selectedTime);
             setSelectedTimeManually(prefs.selectedTime);
-        } else if (detectedTime) { // If no stored time, use detected time
+        } else if (detectedTime) { 
             setSelectedTime(detectedTime);
         }
       } catch (e) {
         console.error(`Failed to parse preferences from localStorage for key ${LS_USER_PREFERENCES_KEY}:`, e);
       }
-    } else if (detectedTime) { // If no stored preferences at all, still set the detected time
+    } else if (detectedTime) { 
         setSelectedTime(detectedTime);
     }
     
@@ -136,7 +136,6 @@ export default function HomePage() {
 
   }, [currentUserId, isLoadingUser, setSelectedTimeManually, getDynamicStorageKey, checkForPendingFeedback, detectedTime]);
   
-  // Ensure selectedTime is initialized with detectedTime if nothing is loaded from localStorage
   useEffect(() => {
     if (!selectedTime && detectedTime) {
         setSelectedTime(detectedTime);
@@ -193,7 +192,7 @@ export default function HomePage() {
 
     let userHistory: ViewingHistoryEntry[] = [];
     let userMood: Mood = "Neutral";
-    let userSelectedTime: TimeOfDay | undefined = detectedTime || "Morning"; // Fallback to detected or Morning
+    let userSelectedTime: TimeOfDay = detectedTime || "Morning"; 
     let userPrefsWeights: UserWeights = { mood: 50, time: 25, history: 25 };
     let userPrefsContentType: ContentType = "BOTH";
 
@@ -213,11 +212,6 @@ export default function HomePage() {
       }
     }
     
-    if (!userSelectedTime) { // Ensure timeOfDay is set
-        userSelectedTime = detectedTime || "Morning";
-    }
-
-
     return {
       userId: userIdToLoad,
       mood: userMood,
@@ -237,9 +231,6 @@ export default function HomePage() {
       return;
     }
     
-    // Ensure timeOfDay is defined for both, using current page's selectedTime as a fallback if a user has no stored time
-    // This step is now handled within loadUserProfileData's fallback logic using detectedTime.
-
     setIsLoadingGroupRecommendations(true);
     setGroupRecommendationError(null);
     const result = await fetchGroupRecommendationsAction({ user1Data, user2Data });
@@ -252,12 +243,18 @@ export default function HomePage() {
     } else {
       setGroupRecommendations(result);
       if (result.length === 0) {
-        toast({ title: "No Common Group Recs", description: "No common recommendations found for User1 and User2 based on their individual preferences. Try adjusting their settings or watch histories." });
+        toast({ title: "No Group Recommendations", description: "Could not find common or compromise recommendations. Try adjusting preferences." });
       } else {
-        toast({ title: "Group Recs Success", description: "Found common recommendations for the group!" });
+        // Check if the reason implies it's a common pick or a compromise
+        const isCommonPick = result.some(rec => rec.reason.toLowerCase().includes("both users"));
+        if (isCommonPick) {
+            toast({ title: "Group Recs Success!", description: "Found common recommendations for the group!" });
+        } else {
+            toast({ title: "Group Recs Found!", description: "Found some compromise recommendations for the group." });
+        }
       }
     }
-  }, [loadUserProfileData, toast, selectedTime]);
+  }, [loadUserProfileData, toast]);
 
 
   const handleTimeChange = (newTime: TimeOfDay) => {
@@ -334,9 +331,9 @@ export default function HomePage() {
               isLoading={isLoadingGroupRecommendations}
               error={groupRecommendationError}
               onCardClick={handleCardClick}
-              currentUserId={currentUserId} // Group card clicks will use current user's session for feedback for now
+              currentUserId={currentUserId} 
               title="Group Picks (User1 & User2)"
-              emptyStateMessage="No common group recommendations found. Try adjusting preferences!"
+              emptyStateMessage="No group recommendations could be found. Try adjusting preferences or watch histories."
               showWhenEmpty={isLoadingGroupRecommendations || !!groupRecommendationError || groupRecommendations.length > 0}
             />
 

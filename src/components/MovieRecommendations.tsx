@@ -10,9 +10,9 @@ interface MovieRecommendationsProps {
   error?: string | null;
   onCardClick: (movie: MovieRecommendationItem) => void;
   currentUserId: string | null;
-  title: string; // To customize the heading
-  emptyStateMessage?: string; // Custom message when no recommendations
-  showWhenEmpty?: boolean; // Control visibility when empty (useful for group recs)
+  title: string; 
+  emptyStateMessage?: string; 
+  showWhenEmpty?: boolean; 
 }
 
 export function MovieRecommendations({
@@ -23,7 +23,7 @@ export function MovieRecommendations({
   currentUserId,
   title,
   emptyStateMessage = "Adjust your preferences and try again!",
-  showWhenEmpty = true, // By default, always show the component structure even if empty
+  showWhenEmpty = true, 
 }: MovieRecommendationsProps) {
   const currentRecommendations = recommendations || [];
   const IconComponent = title.toLowerCase().includes("group") ? Users : Zap;
@@ -60,10 +60,12 @@ export function MovieRecommendations({
   }
 
   if (currentRecommendations.length === 0 && !isLoading) {
+    // Use a more generic empty state heading for group recommendations now that there's a fallback
+    const emptyStateHeading = title.toLowerCase().includes("group") ? "No Group Picks Found" : "No recommendations yet.";
     return (
       <div className="mt-8 text-center py-10">
         <IconComponent className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h2 className="text-xl font-headline font-semibold text-muted-foreground">{title.includes("Group") ? "No Common Picks" : "No recommendations yet."}</h2>
+        <h2 className="text-xl font-headline font-semibold text-muted-foreground">{emptyStateHeading}</h2>
         <p className="text-muted-foreground">{emptyStateMessage}</p>
       </div>
     );
@@ -77,7 +79,7 @@ export function MovieRecommendations({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentRecommendations.map((movie, index) => (
           <MovieCard
-            key={`${movie.title}-${index}`} // Consider a more unique key if titles can repeat within a list
+            key={`${movie.title}-${index}-${currentUserId}`} 
             movie={movie}
             index={index}
             onCardClick={onCardClick}
