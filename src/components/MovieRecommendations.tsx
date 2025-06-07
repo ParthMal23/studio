@@ -5,13 +5,14 @@ import { AlertTriangle, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MovieRecommendationsProps {
-  recommendations: MovieRecommendationItem[] | undefined; // Allow undefined for robustness
+  recommendations: MovieRecommendationItem[] | undefined;
   isLoading: boolean;
   error?: string | null;
   onCardClick: (movie: MovieRecommendationItem) => void;
+  currentUserId: string | null; // Added currentUserId prop
 }
 
-export function MovieRecommendations({ recommendations, isLoading, error, onCardClick }: MovieRecommendationsProps) {
+export function MovieRecommendations({ recommendations, isLoading, error, onCardClick, currentUserId }: MovieRecommendationsProps) {
   if (isLoading) {
     return (
       <div className="mt-8">
@@ -39,7 +40,6 @@ export function MovieRecommendations({ recommendations, isLoading, error, onCard
     );
   }
 
-  // Use (recommendations || []) to ensure .map is always called on an array
   const currentRecommendations = recommendations || [];
 
   if (currentRecommendations.length === 0 && !isLoading) {
@@ -59,7 +59,13 @@ export function MovieRecommendations({ recommendations, isLoading, error, onCard
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentRecommendations.map((movie, index) => (
-          <MovieCard key={`${movie.title}-${index}`} movie={movie} index={index} onCardClick={onCardClick} />
+          <MovieCard
+            key={`${movie.title}-${index}`}
+            movie={movie}
+            index={index}
+            onCardClick={onCardClick}
+            currentUserId={currentUserId} // Pass currentUserId to MovieCard
+          />
         ))}
       </div>
     </div>
@@ -79,4 +85,3 @@ function CardSkeleton() {
     </div>
   )
 }
-

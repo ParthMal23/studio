@@ -9,31 +9,27 @@ interface MovieCardProps {
   movie: MovieRecommendationItem;
   index: number;
   onCardClick?: (movie: MovieRecommendationItem) => void;
+  currentUserId: string | null; // Added currentUserId prop
 }
 
-// Match the MOCK_USER_ID or use a generic key if sessionStorage should not be user-specific for this item
-// For simplicity in this basic model, we can keep it less user-specific or append a general identifier.
-// If true user-specific session storage is needed, MOCK_USER_ID from page.tsx context would be required here.
-// For now, let's assume pending feedback is per-session, not strictly per-mock-user for this example.
-const SS_PENDING_FEEDBACK_KEY_BASE = 'pendingFeedbackItem';
-
-
-export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
+export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCardProps) {
   const animationDelay = `${index * 100}ms`;
 
   const handleCardInteraction = () => {
-    try {
-      const itemToStore = { 
-        title: movie.title, 
-        platform: movie.platform, 
-        description: movie.description,
-        reason: movie.reason,
-        posterUrl: movie.posterUrl
-      };
-      // Key could be made dynamic if MOCK_USER_ID was available here via context/props
-      sessionStorage.setItem(SS_PENDING_FEEDBACK_KEY_BASE, JSON.stringify(itemToStore));
-    } catch (e) {
-      console.error("Error saving to sessionStorage:", e);
+    if (typeof window !== 'undefined' && currentUserId) {
+      try {
+        const itemToStore = {
+          title: movie.title,
+          platform: movie.platform,
+          description: movie.description,
+          reason: movie.reason,
+          posterUrl: movie.posterUrl
+        };
+        const SS_PENDING_FEEDBACK_KEY = `pendingFeedbackItem_${currentUserId}`;
+        sessionStorage.setItem(SS_PENDING_FEEDBACK_KEY, JSON.stringify(itemToStore));
+      } catch (e) {
+        console.error("Error saving to sessionStorage:", e);
+      }
     }
 
     const searchTerm = movie.title;
@@ -44,7 +40,7 @@ export function MovieCard({ movie, index, onCardClick }: MovieCardProps) {
       onCardClick(movie);
     }
   };
-
+  
   const getAiHint = (title: string): string => {
     const cleanedTitle = title.split(':')[0].replace(/[^\\w\\s]/gi, '').trim();
     const words = cleanedTitle.split(/\\s+/).filter(Boolean);
