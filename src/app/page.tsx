@@ -26,10 +26,15 @@ type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platf
 const USER_ID_STORAGE_KEY = 'selectedUserId';
 const COMMON_RECOMMENDATION_REASON_PREFIX = "Common Pick:";
 
+const userDisplayNames: Record<string, string> = {
+  user1: 'Admin',
+  user2: 'Parth',
+};
 
 export default function HomePage() {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [currentYear, setCurrentYear] = useState<string | number>('...');
 
@@ -67,6 +72,7 @@ export default function HomePage() {
       const storedUserId = localStorage.getItem(USER_ID_STORAGE_KEY);
       if (storedUserId) {
         setCurrentUserId(storedUserId);
+        setCurrentUserDisplayName(userDisplayNames[storedUserId] || storedUserId);
       } else {
         router.push('/select-user');
       }
@@ -257,16 +263,16 @@ export default function HomePage() {
       toast({ title: "Group Recs Error", description: result.error, variant: "destructive" });
     } else {
       setGroupRecommendations(result);
-      const partnerName = potentialGroupPartnerId === 'user1' ? 'User 1' : 'User 2';
-      setGroupRecsTitle(`Picks for You and ${partnerName}`);
+      const partnerDisplayName = userDisplayNames[potentialGroupPartnerId] || potentialGroupPartnerId;
+      setGroupRecsTitle(`Picks for You and ${partnerDisplayName}`);
       if (result.length === 0) {
         toast({ title: "No Group Recommendations", description: "Could not find common or compromise recommendations. Try adjusting preferences." });
       } else {
         const hasCommonPick = result.some(rec => rec.reason?.startsWith(COMMON_RECOMMENDATION_REASON_PREFIX));
         if (hasCommonPick) {
-            toast({ title: "Group Recs Success!", description: `Found recommendations including common picks for you and ${partnerName}!` });
+            toast({ title: "Group Recs Success!", description: `Found recommendations including common picks for you and ${partnerDisplayName}!` });
         } else {
-            toast({ title: "Group Recs Found!", description: `Found some compromise recommendations for you and ${partnerName}.` });
+            toast({ title: "Group Recs Found!", description: `Found some compromise recommendations for you and ${partnerDisplayName}.` });
         }
       }
     }
@@ -301,7 +307,7 @@ export default function HomePage() {
     router.push('/select-user');
   };
 
-  if (isLoadingUser || !currentUserId) {
+  if (isLoadingUser || !currentUserId || !currentUserDisplayName) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -311,12 +317,12 @@ export default function HomePage() {
     );
   }
   
-  const otherUserButtonId = currentUserId === 'user1' ? 'user2' : 'user1';
-  const otherUserButtonLabel = currentUserId === 'user1' ? 'User 2' : 'User 1';
+  const otherUserInternalId = currentUserId === 'user1' ? 'user2' : 'user1';
+  const otherUserDisplayName = userDisplayNames[otherUserInternalId] || otherUserInternalId;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <AppHeader currentUserId={currentUserId} onLogout={handleLogout} />
+      <AppHeader currentUserId={currentUserDisplayName} onLogout={handleLogout} />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
@@ -347,13 +353,13 @@ export default function HomePage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-2">
-                  <p className="text-sm text-muted-foreground">You are: <span className="font-semibold text-primary">{currentUserId}</span></p>
+                  <p className="text-sm text-muted-foreground">You are: <span className="font-semibold text-primary">{currentUserDisplayName}</span></p>
                   <Button 
-                    variant={potentialGroupPartnerId === otherUserButtonId ? 'default' : 'outline'} 
-                    onClick={() => setPotentialGroupPartnerId(otherUserButtonId)}
+                    variant={potentialGroupPartnerId === otherUserInternalId ? 'default' : 'outline'} 
+                    onClick={() => setPotentialGroupPartnerId(otherUserInternalId)}
                     className="w-full"
                   >
-                    {otherUserButtonLabel}
+                    {otherUserDisplayName}
                   </Button>
                 </div>
                 <DialogFooter>

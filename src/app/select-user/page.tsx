@@ -38,14 +38,14 @@ export default function SelectUserPage() {
             className="w-full text-lg py-7 bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all duration-300"
             size="lg"
           >
-            <User className="mr-2 h-5 w-5" /> User 1
+            <User className="mr-2 h-5 w-5" /> Admin
           </Button>
           <Button
             onClick={() => handleUserSelect('user2')}
             className="w-full text-lg py-7 bg-accent hover:bg-accent/90 text-accent-foreground shadow-md hover:shadow-lg transition-all duration-300"
             size="lg"
           >
-            <User className="mr-2 h-5 w-5" /> User 2
+            <User className="mr-2 h-5 w-5" /> Parth
           </Button>
         </CardContent>
       </Card>
