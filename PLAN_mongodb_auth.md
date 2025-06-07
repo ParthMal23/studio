@@ -6,15 +6,15 @@ This document outlines the steps to integrate MongoDB for persistent user-specif
 ## Phase 1: Setup & Configuration
 
 1.  **MongoDB Setup:**
-    *   [x] Create a MongoDB Atlas account (or use a local MongoDB instance).
-    *   [x] Create a new cluster and database (e.g., `firesync_db`).
-    *   [x] Get the MongoDB connection string.
-    *   [x] Configure network access (allow connections from your app's IP or 0.0.0.0/0 for development - be careful with production).
+    *   [ ] Create a MongoDB Atlas account (or use a local MongoDB instance).
+    *   [ ] Create a new cluster and database (e.g., `firesync_db`).
+    *   [ ] Get the MongoDB connection string.
+    *   [ ] Configure network access (allow connections from your app's IP or 0.0.0.0/0 for development - be careful with production).
 
 2.  **Environment Variables (`.env`):**
-    *   [x] Add `MONGODB_URI="your_mongodb_connection_string"`
+    *   [x] Add `MONGODB_URI="your_mongodb_connection_string_here"`
     *   [x] Add `NEXTAUTH_URL="http://localhost:9002"` (or your development URL) - *Important for NextAuth.js*
-    *   [x] Add `NEXTAUTH_SECRET="your_strong_random_secret"` - *Generate a strong secret, e.g., using `openssl rand -base64 32`*
+    *   [x] Add `NEXTAUTH_SECRET="your_strong_random_secret_here"` - *Generate a strong secret, e.g., using `openssl rand -base64 32`*
 
 3.  **Install Dependencies:**
     *   [x] `npm install next-auth mongodb mongoose`
