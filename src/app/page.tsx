@@ -88,7 +88,7 @@ export default function HomePage() {
 
 
   useEffect(() => {
-    if (!isMounted || !currentUserId || isLoadingUser) return;
+    if (!currentUserId || isLoadingUser) return;
 
     const LS_VIEWING_HISTORY_KEY = getDynamicStorageKey('fireSyncViewingHistory', currentUserId);
     const LS_USER_PREFERENCES_KEY = getDynamicStorageKey('fireSyncUserPreferences', currentUserId);
@@ -127,16 +127,16 @@ export default function HomePage() {
       window.removeEventListener('focus', checkForPendingFeedback);
     };
 
-  }, [isMounted, currentUserId, isLoadingUser, setSelectedTimeManually, getDynamicStorageKey, checkForPendingFeedback]);
+  }, [currentUserId, isLoadingUser, setSelectedTimeManually, getDynamicStorageKey, checkForPendingFeedback]);
 
   useEffect(() => {
-    if (isMounted && !selectedTime && detectedTime) {
+    if (!selectedTime && detectedTime) {
         setSelectedTime(detectedTime);
     }
-  }, [isMounted, selectedTime, detectedTime]);
+  }, [selectedTime, detectedTime]);
 
   useEffect(() => {
-    if (!isMounted || !currentUserId || isLoadingUser) return;
+    if (!currentUserId || isLoadingUser) return;
 
     const LS_VIEWING_HISTORY_KEY = getDynamicStorageKey('fireSyncViewingHistory', currentUserId);
     const LS_USER_PREFERENCES_KEY = getDynamicStorageKey('fireSyncUserPreferences', currentUserId);
@@ -146,7 +146,7 @@ export default function HomePage() {
     localStorage.setItem(LS_VIEWING_HISTORY_KEY, JSON.stringify(viewingHistory));
     const preferencesToStore = { mood, selectedTime, userWeights, contentType };
     localStorage.setItem(LS_USER_PREFERENCES_KEY, JSON.stringify(preferencesToStore));
-  }, [isMounted, currentUserId, isLoadingUser, viewingHistory, mood, selectedTime, userWeights, contentType, getDynamicStorageKey]);
+  }, [currentUserId, isLoadingUser, viewingHistory, mood, selectedTime, userWeights, contentType, getDynamicStorageKey]);
 
   const handleGetRecommendations = useCallback(async () => {
     if (!selectedTime) {
@@ -195,10 +195,9 @@ export default function HomePage() {
     toast({ title: "History Updated", description: `${feedback.title} added to your viewing history.` });
   };
 
-  const handleSwitchUser = () => {
+  const handleLogout = () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(USER_ID_STORAGE_KEY); // Optional: clear current user to ensure selection page logic triggers
-      // Or, simply navigate, and the user selection page will overwrite
+      localStorage.removeItem(USER_ID_STORAGE_KEY);
     }
     router.push('/select-user');
   };
@@ -227,8 +226,8 @@ export default function HomePage() {
               {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCw className="mr-2 h-5 w-5" />}
               Get Recommendations
             </Button>
-            <Button variant="outline" onClick={handleSwitchUser} className="w-full text-md py-3">
-             <LogOut className="mr-2 h-4 w-4" /> Switch User Profile
+            <Button variant="outline" onClick={handleLogout} className="w-full text-md py-3">
+             <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
           </div>
 
