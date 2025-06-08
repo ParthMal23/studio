@@ -1,9 +1,11 @@
 
 "use server";
 
-import { generateContentRecommendations, GenerateContentRecommendationsInput } from "@/ai/flows/generate-movie-recommendations";
+import { generateContentRecommendations, GenerateContentRecommendationsInput, ContentRecommendationSchema as GenRecContentRecSchema } from "@/ai/flows/generate-movie-recommendations";
 import { analyzeWatchPatterns, AnalyzeWatchPatternsInput, AnalyzeWatchPatternsOutput } from "@/ai/flows/analyze-watch-patterns";
 import { generateGroupCompromiseRecommendations, GenerateGroupCompromiseRecommendationsInput, GenerateGroupCompromiseRecommendationsOutput } from "@/ai/flows/generate-group-compromise-recommendations";
+import { generateTextQueryRecommendations, GenerateTextQueryRecommendationsInput, GenerateTextQueryRecommendationsOutput } from "@/ai/flows/generate-text-query-recommendations";
+
 import { fetchContentDetailsFromTmdb } from "@/services/tmdbService";
 import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem, FetchGroupRecommendationsParams, UserProfileDataForGroupRecs } from "./types";
 
@@ -128,7 +130,6 @@ export async function fetchGroupRecommendationsAction(
 
     const recs1 = recs1Result as MovieRecommendationItem[];
     const recs2 = recs2Result as MovieRecommendationItem[];
-
     const titlesInRecs1 = new Map(recs1.map(rec => [normalizeTitle(rec.title), rec]));
 
     for (const rec2 of recs2) {
@@ -146,15 +147,18 @@ export async function fetchGroupRecommendationsAction(
     }
     
     // 2. Fetch compromise recommendations
-    const user1HistoryTitles = params.user1Data.viewingHistory.map(h => h.title).slice(0, 10).join(', ') || 'None';
-    const user2HistoryTitles = params.user2Data.viewingHistory.map(h => h.title).slice(0, 10).join(', ') || 'None';
+    const user1HistoryTitles = params.user1Data.viewingHistory.map(h => h.title).slice(0, 5).join(', ') || 'None'; // Limit history length
+    const user2HistoryTitles = params.user2Data.viewingHistory.map(h => h.title).slice(0, 5).join(', ') || 'None'; // Limit history length
     
-    const user1ProfileSummary = `${user1DisplayName}: Mood - ${params.user1Data.mood}, Time - ${params.user1Data.timeOfDay}, Key History - ${user1HistoryTitles}.`;
-    const user2ProfileSummary = `${user2DisplayName}: Mood - ${params.user2Data.mood}, Time - ${params.user2Data.timeOfDay}, Key History - ${user2HistoryTitles}.`;
+    const user1ProfileSummary = `${user1DisplayName}: Mood - ${params.user1Data.mood}, Time - ${params.user1Data.timeOfDay}, Recent History - ${user1HistoryTitles}.`;
+    const user2ProfileSummary = `${user2DisplayName}: Mood - ${params.user2Data.mood}, Time - ${params.user2Data.timeOfDay}, Recent History - ${user2HistoryTitles}.`;
 
     let compromiseContentType: ContentType = "BOTH";
     if (params.user1Data.contentType === params.user2Data.contentType) {
       compromiseContentType = params.user1Data.contentType;
+    } else {
+      // If content types differ, maybe default to BOTH or pick one (e.g., user1's preference)
+      // For now, sticking to BOTH as a general compromise
     }
 
     const compromiseInput: GenerateGroupCompromiseRecommendationsInput = {
@@ -193,5 +197,58 @@ export async function fetchGroupRecommendationsAction(
     console.error("Error fetching group content recommendations:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return { error: `Failed to fetch group content recommendations: ${errorMessage}`, type: 'combined' };
+  }
+}
+
+
+interface FetchTextQueryRecommendationsParams {
+  searchQuery: string;
+  mood: string;
+  timeOfDay: string;
+  viewingHistory: ViewingHistoryEntry[];
+  contentType: ContentType;
+}
+
+export async function fetchTextQueryRecommendationsAction(
+  params: FetchTextQueryRecommendationsParams
+): Promise<MovieRecommendationItem[] | { error: string }> {
+  try {
+    const viewingHistorySummary = params.viewingHistory.length > 0
+      ? `User has watched: ${params.viewingHistory.map(m =>
+          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''})`
+        ).join(', ')}.`
+      : "User has no viewing history yet.";
+
+    const input: GenerateTextQueryRecommendationsInput = {
+      userQuery: params.searchQuery,
+      mood: params.mood,
+      timeOfDay: params.timeOfDay,
+      viewingHistory: viewingHistorySummary,
+      contentType: params.contentType,
+    };
+
+    const recommendationsFromAI = await generateTextQueryRecommendations(input);
+
+    if (!recommendationsFromAI) {
+      return [];
+    }
+
+    const recommendationsWithDetails: MovieRecommendationItem[] = await Promise.all(
+      recommendationsFromAI.map(async (rec) => {
+        const tmdbDetails = await fetchContentDetailsFromTmdb(rec.title, params.contentType);
+        return {
+          ...rec,
+          posterUrl: tmdbDetails.posterUrl,
+          watchUrl: tmdbDetails.watchUrl,
+        };
+      })
+    );
+
+    return recommendationsWithDetails;
+
+  } catch (error) {
+    console.error("Error fetching text query recommendations:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { error: `Failed to fetch text query recommendations: ${errorMessage}` };
   }
 }

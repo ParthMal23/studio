@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType, UserProfileDataForGroupRecs } from '@/lib/types';
-import { fetchContentRecommendationsAction, fetchGroupRecommendationsAction } from '@/lib/actions';
+import { fetchContentRecommendationsAction, fetchGroupRecommendationsAction, fetchTextQueryRecommendationsAction } from '@/lib/actions';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { AppHeader } from '@/components/AppHeader';
 import { MoodSelector } from '@/components/MoodSelector';
@@ -15,11 +15,12 @@ import { MovieRecommendations } from '@/components/MovieRecommendations';
 import { ViewingHistoryTracker } from '@/components/ViewingHistoryTracker';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Loader2, Users, LogOut } from 'lucide-react';
+import { RefreshCw, Loader2, Users, LogOut, Search as SearchIcon } from 'lucide-react';
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
@@ -41,11 +42,11 @@ export default function HomePage() {
   const [mood, setMood] = useState<Mood>("Neutral");
   const { 
     currentTimeOfDay: timeOfDay, 
-    setCurrentTimeOfDay: setTimeOfDayDirectly, // Raw setter from hook
+    setCurrentTimeOfDay: _setHookTimeOfDay, // Raw setter, not used directly for manual changes from UI
     isAuto: isTimeAuto, 
     setAuto: setTimeAutoDetect, 
     setManually: setTimeManually 
-  } = useTimeOfDay(); // Initialize with auto-detection or from localStorage later
+  } = useTimeOfDay();
 
   const [contentType, setContentType] = useState<ContentType>("BOTH");
   const [userWeights, setUserWeights] = useState<UserWeights>({ mood: 50, time: 25, history: 25 });
@@ -61,6 +62,11 @@ export default function HomePage() {
   const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
   const [potentialGroupPartnerId, setPotentialGroupPartnerId] = useState<string | null>(null);
   const [groupRecsTitle, setGroupRecsTitle] = useState<string>("Group Picks");
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchRecommendations, setSearchRecommendations] = useState<MovieRecommendationItem[]>([]);
+  const [isLoadingSearchRecommendations, setIsLoadingSearchRecommendations] = useState(false);
+  const [searchRecommendationError, setSearchRecommendationError] = useState<string | null>(null);
 
   const [pendingFeedbackItemForDialog, setPendingFeedbackItemForDialog] = useState<PendingFeedbackStorageItem | null>(null);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
@@ -131,10 +137,9 @@ export default function HomePage() {
         if (prefs.mood) setMood(prefs.mood);
         if (prefs.userWeights) setUserWeights(prefs.userWeights);
         if (prefs.contentType) setContentType(prefs.contentType);
-        if (prefs.selectedTime) { // This corresponds to timeOfDay from the hook now
-            setTimeManually(prefs.selectedTime); // Set hook to manual mode with this time
+        if (prefs.selectedTime) { 
+            setTimeManually(prefs.selectedTime); 
         }
-        // If prefs.selectedTime is not present, useTimeOfDay hook will auto-detect or keep its current value.
       } catch (e) {
         console.error(`Failed to parse preferences from localStorage for key ${LS_USER_PREFERENCES_KEY}:`, e);
       }
@@ -159,7 +164,6 @@ export default function HomePage() {
     if (!LS_VIEWING_HISTORY_KEY || !LS_USER_PREFERENCES_KEY) return;
 
     localStorage.setItem(LS_VIEWING_HISTORY_KEY, JSON.stringify(viewingHistory));
-    // Save timeOfDay from the hook as selectedTime
     const preferencesToStore = { mood, selectedTime: timeOfDay, userWeights, contentType };
     localStorage.setItem(LS_USER_PREFERENCES_KEY, JSON.stringify(preferencesToStore));
   }, [currentUserId, isLoadingUser, viewingHistory, mood, timeOfDay, userWeights, contentType, getDynamicStorageKey]);
@@ -175,6 +179,7 @@ export default function HomePage() {
     }
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
+    setRecommendations([]); // Clear previous recommendations
     const result = await fetchContentRecommendationsAction({ mood, timeOfDay, viewingHistory, contentType });
     setIsLoadingRecommendations(false);
     if ('error' in result) {
@@ -199,7 +204,7 @@ export default function HomePage() {
 
     let userHistory: ViewingHistoryEntry[] = [];
     let userMoodState: Mood = "Neutral";
-    let userTimeOfDayState: TimeOfDay = "Morning"; // Default, will be overridden
+    let userTimeOfDayState: TimeOfDay = "Morning"; 
     let userPrefsWeights: UserWeights = { mood: 50, time: 25, history: 25 };
     let userPrefsContentType: ContentType = "BOTH";
 
@@ -213,14 +218,11 @@ export default function HomePage() {
         if (prefs.mood) userMoodState = prefs.mood;
         if (prefs.userWeights) userPrefsWeights = prefs.userWeights;
         if (prefs.contentType) userPrefsContentType = prefs.contentType;
-        if (prefs.selectedTime) userTimeOfDayState = prefs.selectedTime; // This is the key for time
+        if (prefs.selectedTime) userTimeOfDayState = prefs.selectedTime; 
       } catch (e) {
         console.error("Error parsing prefs for group", e);
       }
     } else {
-        // If no stored preferences for the other user, try to get a sensible default time
-        // This part is tricky as we don't have direct access to their hook.
-        // For simplicity, default to "Morning" or the current user's timeOfDay if available.
         userTimeOfDayState = timeOfDay || "Morning";
     }
     
@@ -253,6 +255,7 @@ export default function HomePage() {
     
     setIsLoadingGroupRecommendations(true);
     setGroupRecommendationError(null);
+    setGroupRecommendations([]); // Clear previous
     const result = await fetchGroupRecommendationsAction({ user1Data, user2Data: partnerData });
     setIsLoadingGroupRecommendations(false);
 
@@ -278,8 +281,50 @@ export default function HomePage() {
     setPotentialGroupPartnerId(null); 
   }, [currentUserId, potentialGroupPartnerId, loadUserProfileData, toast]);
 
+  const handleGetTextQueryRecommendations = useCallback(async () => {
+    if (!searchQuery.trim()) {
+      toast({ title: "Search Error", description: "Please enter a search query.", variant: "destructive" });
+      return;
+    }
+    if (!timeOfDay) {
+      toast({ title: "Cannot get recommendations", description: "Time of day is not set.", variant: "destructive" });
+      return;
+    }
+    if (!currentUserId) {
+      toast({ title: "User not identified", description: "Please select a user profile.", variant: "destructive" });
+      return;
+    }
+
+    setIsLoadingSearchRecommendations(true);
+    setSearchRecommendationError(null);
+    setSearchRecommendations([]); // Clear previous search results
+
+    const result = await fetchTextQueryRecommendationsAction({
+      searchQuery,
+      mood,
+      timeOfDay,
+      viewingHistory,
+      contentType
+    });
+    setIsLoadingSearchRecommendations(false);
+
+    if ('error' in result) {
+      setSearchRecommendationError(result.error);
+      setSearchRecommendations([]);
+      toast({ title: "Search Error", description: result.error, variant: "destructive" });
+    } else {
+      setSearchRecommendations(result);
+      if (result.length === 0) {
+        toast({ title: "No Results", description: "No recommendations found for your search. Try a different query." });
+      } else {
+        toast({ title: "Search Success", description: `Found recommendations for "${searchQuery}"!` });
+      }
+    }
+  }, [searchQuery, mood, timeOfDay, viewingHistory, contentType, toast, currentUserId]);
+
+
   const handleTimeChange = (newTime: TimeOfDay) => {
-    setTimeManually(newTime); // Use setManually from the hook
+    setTimeManually(newTime); 
   };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {
@@ -321,6 +366,27 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col">
       <AppHeader currentUserId={currentUserDisplayName} onLogout={handleLogout} />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
+        
+        <div className="mb-8 p-6 bg-card shadow-lg rounded-lg border">
+          <h2 className="text-2xl font-headline font-semibold mb-4 text-primary flex items-center gap-2">
+            <SearchIcon className="h-7 w-7 text-accent" /> Find Something Specific?
+          </h2>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="e.g., 'movie about a robot friend' or 'lighthearted comedy series'"
+              className="flex-grow text-base"
+              onKeyPress={(e) => { if (e.key === 'Enter') handleGetTextQueryRecommendations();}}
+            />
+            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6 bg-accent hover:bg-accent/90 text-accent-foreground">
+              {isLoadingSearchRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <SearchIcon className="mr-2 h-5 w-5" />}
+              Search
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
             <MoodSelector selectedMood={mood} onMoodChange={setMood} />
@@ -342,7 +408,7 @@ export default function HomePage() {
                 if (!isOpen) setPotentialGroupPartnerId(null); 
             }}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full text-lg py-6 border-primary text-primary hover:bg-primary/10">
+                 <Button variant="outline" className="w-full text-lg py-6 border-primary text-primary hover:bg-primary/10">
                   <Users className="mr-2 h-5 w-5" />
                   Watch with a Friend
                 </Button>
@@ -378,12 +444,25 @@ export default function HomePage() {
 
           <div className="lg:col-span-2 space-y-6">
             <MovieRecommendations
+              recommendations={searchRecommendations}
+              isLoading={isLoadingSearchRecommendations}
+              error={searchRecommendationError}
+              onCardClick={handleCardClick}
+              currentUserId={currentUserId}
+              title={searchQuery ? `Results for "${searchQuery}"` : "Search For Something"}
+              emptyStateMessage="Enter a query above to search for specific movies or shows."
+              showWhenEmpty={!!searchQuery || isLoadingSearchRecommendations || !!searchRecommendationError || searchRecommendations.length > 0}
+            />
+            
+            {(searchRecommendations.length > 0 || isLoadingSearchRecommendations || searchRecommendationError) && <Separator className="my-8" />}
+            
+            <MovieRecommendations
               recommendations={recommendations}
               isLoading={isLoadingRecommendations}
               error={recommendationError}
               onCardClick={handleCardClick}
               currentUserId={currentUserId}
-              title="Here are your picks!"
+              title="Tailored For You"
             />
             
             { (groupRecommendations.length > 0 || isLoadingGroupRecommendations || groupRecommendationError) && <Separator className="my-8" /> }
@@ -428,10 +507,4 @@ export default function HomePage() {
     </div>
   );
 }
-    
-
-      
-
-
-
     
