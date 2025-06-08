@@ -19,8 +19,9 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Loader2, Users, LogOut, Search as SearchIcon } from 'lucide-react';
+import { RefreshCw, Loader2, Users, LogOut, Search as SearchIcon, Zap } from 'lucide-react';
 
 type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
 
@@ -42,7 +43,7 @@ export default function HomePage() {
   const [mood, setMood] = useState<Mood>("Neutral");
   const { 
     currentTimeOfDay: timeOfDay, 
-    setCurrentTimeOfDay: _setHookTimeOfDay, // Raw setter, not used directly for manual changes from UI
+    setCurrentTimeOfDay: _setHookTimeOfDay,
     isAuto: isTimeAuto, 
     setAuto: setTimeAutoDetect, 
     setManually: setTimeManually 
@@ -67,6 +68,8 @@ export default function HomePage() {
   const [searchRecommendations, setSearchRecommendations] = useState<MovieRecommendationItem[]>([]);
   const [isLoadingSearchRecommendations, setIsLoadingSearchRecommendations] = useState(false);
   const [searchRecommendationError, setSearchRecommendationError] = useState<string | null>(null);
+
+  const [activeRecommendationType, setActiveRecommendationType] = useState<null | 'personal' | 'group' | 'search'>(null);
 
   const [pendingFeedbackItemForDialog, setPendingFeedbackItemForDialog] = useState<PendingFeedbackStorageItem | null>(null);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
@@ -179,15 +182,26 @@ export default function HomePage() {
     }
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
-    setRecommendations([]); // Clear previous recommendations
+    setRecommendations([]); 
+
+    // Clear other recommendation types and their errors
+    setGroupRecommendations([]);
+    setSearchRecommendations([]);
+    setGroupRecommendationError(null);
+    setSearchRecommendationError(null);
+    setSearchQuery(''); 
+    setGroupRecsTitle("Group Picks"); 
+
     const result = await fetchContentRecommendationsAction({ mood, timeOfDay, viewingHistory, contentType });
     setIsLoadingRecommendations(false);
     if ('error' in result) {
       setRecommendationError(result.error);
       setRecommendations([]);
+      setActiveRecommendationType('personal'); // Still set type to show error in correct component
       toast({ title: "Error", description: result.error, variant: "destructive" });
     } else {
       setRecommendations(result);
+      setActiveRecommendationType('personal');
       if (result.length === 0) {
         toast({ title: "No Recommendations", description: "Try adjusting your preferences or adding to your watch history." });
       } else {
@@ -255,16 +269,26 @@ export default function HomePage() {
     
     setIsLoadingGroupRecommendations(true);
     setGroupRecommendationError(null);
-    setGroupRecommendations([]); // Clear previous
+    setGroupRecommendations([]); 
+
+    // Clear other recommendation types and their errors
+    setRecommendations([]);
+    setSearchRecommendations([]);
+    setRecommendationError(null);
+    setSearchRecommendationError(null);
+    setSearchQuery('');
+
     const result = await fetchGroupRecommendationsAction({ user1Data, user2Data: partnerData });
     setIsLoadingGroupRecommendations(false);
 
     if ('error' in result) {
       setGroupRecommendationError(result.error);
       setGroupRecommendations([]);
+      setActiveRecommendationType('group');
       toast({ title: "Group Recs Error", description: result.error, variant: "destructive" });
     } else {
       setGroupRecommendations(result);
+      setActiveRecommendationType('group');
       const partnerDisplayName = userDisplayNames[potentialGroupPartnerId] || potentialGroupPartnerId;
       setGroupRecsTitle(`Picks for You and ${partnerDisplayName}`);
       if (result.length === 0) {
@@ -297,7 +321,14 @@ export default function HomePage() {
 
     setIsLoadingSearchRecommendations(true);
     setSearchRecommendationError(null);
-    setSearchRecommendations([]); // Clear previous search results
+    setSearchRecommendations([]); 
+
+    // Clear other recommendation types and their errors
+    setRecommendations([]);
+    setGroupRecommendations([]);
+    setRecommendationError(null);
+    setGroupRecommendationError(null);
+    setGroupRecsTitle("Group Picks");
 
     const result = await fetchTextQueryRecommendationsAction({
       searchQuery,
@@ -311,9 +342,11 @@ export default function HomePage() {
     if ('error' in result) {
       setSearchRecommendationError(result.error);
       setSearchRecommendations([]);
+      setActiveRecommendationType('search');
       toast({ title: "Search Error", description: result.error, variant: "destructive" });
     } else {
       setSearchRecommendations(result);
+      setActiveRecommendationType('search');
       if (result.length === 0) {
         toast({ title: "No Results", description: "No recommendations found for your search. Try a different query." });
       } else {
@@ -443,42 +476,59 @@ export default function HomePage() {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <MovieRecommendations
-              recommendations={searchRecommendations}
-              isLoading={isLoadingSearchRecommendations}
-              error={searchRecommendationError}
-              onCardClick={handleCardClick}
-              currentUserId={currentUserId}
-              title={searchQuery ? `Results for "${searchQuery}"` : "Search For Something"}
-              emptyStateMessage="Enter a query above to search for specific movies or shows."
-              showWhenEmpty={!!searchQuery || isLoadingSearchRecommendations || !!searchRecommendationError || searchRecommendations.length > 0}
-            />
+            {activeRecommendationType === 'search' && (
+              <MovieRecommendations
+                recommendations={searchRecommendations}
+                isLoading={isLoadingSearchRecommendations}
+                error={searchRecommendationError}
+                onCardClick={handleCardClick}
+                currentUserId={currentUserId}
+                title={searchQuery ? `Results for "${searchQuery}"` : "Search For Something"}
+                emptyStateMessage="No results for your search. Try a different query or use the buttons on the left."
+              />
+            )}
             
-            {(searchRecommendations.length > 0 || isLoadingSearchRecommendations || searchRecommendationError) && <Separator className="my-8" />}
+            {activeRecommendationType === 'personal' && (
+              <MovieRecommendations
+                recommendations={recommendations}
+                isLoading={isLoadingRecommendations}
+                error={recommendationError}
+                onCardClick={handleCardClick}
+                currentUserId={currentUserId}
+                title="Tailored For You"
+                emptyStateMessage="No personal recommendations yet. Adjust your preferences or add to your watch history!"
+              />
+            )}
             
-            <MovieRecommendations
-              recommendations={recommendations}
-              isLoading={isLoadingRecommendations}
-              error={recommendationError}
-              onCardClick={handleCardClick}
-              currentUserId={currentUserId}
-              title="Tailored For You"
-            />
-            
-            { (groupRecommendations.length > 0 || isLoadingGroupRecommendations || groupRecommendationError) && <Separator className="my-8" /> }
+            {activeRecommendationType === 'group' && (
+               <MovieRecommendations
+                recommendations={groupRecommendations}
+                isLoading={isLoadingGroupRecommendations}
+                error={groupRecommendationError}
+                onCardClick={handleCardClick}
+                currentUserId={currentUserId} 
+                title={groupRecsTitle}
+                emptyStateMessage="No group recommendations found. Try adjusting preferences or watch histories."
+              />
+            )}
 
-            <MovieRecommendations
-              recommendations={groupRecommendations}
-              isLoading={isLoadingGroupRecommendations}
-              error={groupRecommendationError}
-              onCardClick={handleCardClick}
-              currentUserId={currentUserId} 
-              title={groupRecsTitle}
-              emptyStateMessage="No group recommendations found. Try adjusting preferences or watch histories."
-              showWhenEmpty={isLoadingGroupRecommendations || !!groupRecommendationError || groupRecommendations.length > 0}
-            />
-
-            <Separator className="my-8" />
+            {activeRecommendationType === null && (
+               <Card className="shadow-lg border-dashed border-primary/30">
+                <CardContent className="p-10 text-center">
+                  <Zap className="h-12 w-12 text-primary/50 mx-auto mb-4" />
+                  <p className="text-muted-foreground font-semibold text-lg">
+                    Ready for some recommendations?
+                  </p>
+                  <p className="text-muted-foreground">
+                    Use the search bar above or the buttons on the left to get started!
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Separator before Viewing History, only if a recommendation section was active */}
+            {activeRecommendationType !== null && <Separator className="my-8" />}
+            
             <ViewingHistoryTracker
               viewingHistory={viewingHistory}
               onHistoryChange={setViewingHistory}
