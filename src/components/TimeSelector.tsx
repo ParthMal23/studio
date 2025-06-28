@@ -3,102 +3,87 @@
 
 import type { TimeOfDay } from '@/lib/types';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sun, CloudSun, CloudMoon, Moon, Clock, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Sun, CloudSun, CloudMoon, Moon, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { cn } from "@/lib/utils";
 
 const timeOfDayOptions: { value: TimeOfDay; label: string, icon: React.ElementType }[] = [
-  { value: "Morning", label: "Morning (5am - 12pm)", icon: Sun },
-  { value: "Afternoon", label: "Afternoon (12pm - 5pm)", icon: CloudSun },
-  { value: "Evening", label: "Evening (5pm - 9pm)", icon: CloudMoon },
-  { value: "Night", label: "Night (9pm - 5am)", icon: Moon },
+  { value: "Morning", label: "Morning", icon: Sun },
+  { value: "Afternoon", label: "Afternoon", icon: CloudSun },
+  { value: "Evening", label: "Evening", icon: CloudMoon },
+  { value: "Night", label: "Night", icon: Moon },
 ];
 
 interface TimeSelectorProps {
   currentTime: TimeOfDay | undefined;
   onTimeChange: (time: TimeOfDay) => void;
   isAuto: boolean;
-  onSetAuto: () => void;
+  onToggleAuto: (auto: boolean) => void;
 }
 
-export function TimeSelector({ currentTime, onTimeChange, isAuto, onSetAuto }: TimeSelectorProps) {
+export function TimeSelector({ currentTime, onTimeChange, isAuto, onToggleAuto }: TimeSelectorProps) {
   const [isClientMounted, setIsClientMounted] = useState(false);
 
   useEffect(() => {
     setIsClientMounted(true);
   }, []);
 
-  const handleSelectChange = (value: string) => {
-    const newTime = value as TimeOfDay;
-    onTimeChange(newTime);
-  };
-
-  const handleSetAuto = () => {
-    onSetAuto();
-  };
-
-  if (!isClientMounted) {
+  if (!isClientMounted || !currentTime) {
     return (
       <Card className="shadow-lg">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" /> Loading Time...
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="h-10 w-full bg-muted rounded-md animate-pulse"></div>
-          <div className="h-10 w-full bg-muted rounded-md animate-pulse"></div>
+        <CardContent>
+          <div className="grid h-[116px] grid-cols-2 gap-3">
+            <div className="animate-pulse rounded-md bg-muted"></div>
+            <div className="animate-pulse rounded-md bg-muted"></div>
+            <div className="animate-pulse rounded-md bg-muted"></div>
+            <div className="animate-pulse rounded-md bg-muted"></div>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  const displayTime = currentTime || "Loading...";
-  const CurrentTimeIcon = timeOfDayOptions.find(opt => opt.value === currentTime)?.icon || Clock;
-
   return (
     <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-          <CurrentTimeIcon className="h-6 w-6" /> What time is it?
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardTitle className="font-headline text-xl text-primary">
+          Time of Day
         </CardTitle>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="automatic-time" className="text-sm font-medium">Automatic</Label>
+          <Switch
+            id="automatic-time"
+            checked={isAuto}
+            onCheckedChange={onToggleAuto}
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="time-select" className="text-base">
-              Current setting: {displayTime} {isAuto && currentTime ? "(Auto)" : ""}
-            </Label>
-            {!isAuto && currentTime && ( 
-              <Button variant="outline" size="sm" onClick={handleSetAuto}>
-                Auto-detect
-              </Button>
-            )}
-          </div>
-          <Select
-            value={currentTime || ""} 
-            onValueChange={handleSelectChange}
-            disabled={!currentTime}
-          >
-            <SelectTrigger id="time-select" className="w-full">
-              <SelectValue placeholder="Select time of day" />
-            </SelectTrigger>
-            <SelectContent>
-              {timeOfDayOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex items-center gap-2">
-                    <option.icon className="h-4 w-4 text-muted-foreground" />
-                    {option.label}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {isAuto && currentTime && <p className="text-sm text-muted-foreground">Time is being auto-detected. You can manually set it above.</p>}
-          {!currentTime && isAuto && <p className="text-sm text-muted-foreground">Auto-detecting time...</p>}
-          {!currentTime && !isAuto && <p className="text-sm text-muted-foreground">Please select a time or use auto-detect.</p>}
+        <div className="grid grid-cols-2 gap-3">
+          {timeOfDayOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={currentTime === option.value && !isAuto ? 'default' : 'outline'}
+              className={cn(
+                'h-auto justify-start p-3 text-base gap-3',
+                isAuto && currentTime === option.value && 'border-primary bg-primary/10 text-primary'
+              )}
+              onClick={() => onTimeChange(option.value)}
+              disabled={isAuto}
+              aria-pressed={!isAuto && currentTime === option.value}
+            >
+              <option.icon className="h-5 w-5" />
+              <span>{option.label}</span>
+            </Button>
+          ))}
         </div>
       </CardContent>
     </Card>

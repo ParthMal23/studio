@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,28 +16,27 @@ const getCurrentTimeOfDay = (): TimeOfDay => {
 };
 
 export function useTimeOfDay() {
-  const [currentTimeOfDay, setCurrentTimeOfDay] = useState<TimeOfDay | undefined>();
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay | undefined>();
   const [isAuto, setIsAuto] = useState(true);
 
   useEffect(() => {
-    // When isAuto is true, we want to detect the time.
-    // This effect will run on initial mount and whenever isAuto is set back to true.
     if (isAuto) {
-      setCurrentTimeOfDay(getCurrentTimeOfDay());
+      setTimeOfDay(getCurrentTimeOfDay());
     }
   }, [isAuto]);
 
   const setTimeManually = useCallback((time: TimeOfDay) => {
-    // When a user sets the time manually, switch to manual mode and set the time.
     setIsAuto(false);
-    setCurrentTimeOfDay(time);
+    setTimeOfDay(time);
   }, []);
 
-  const setAuto = useCallback(() => {
-    // When a user wants to auto-detect, just switch the mode.
-    // The useEffect will handle setting the time.
-    setIsAuto(true);
-  }, []);
+  const toggleAuto = useCallback((auto: boolean) => {
+    setIsAuto(auto);
+    if (!auto && !timeOfDay) {
+      // When switching to manual from an undefined state, default to something to prevent being stuck.
+      setTimeOfDay("Morning");
+    }
+  }, [timeOfDay]);
   
-  return { timeOfDay: currentTimeOfDay, setTimeManually, isAuto, setAuto };
+  return { timeOfDay, setTimeManually, isAuto, toggleAuto };
 }

@@ -31,7 +31,7 @@ export default function HomePage() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const [mood, setMood] = useState<Mood>("Neutral");
-  const { timeOfDay, setTimeManually, isAuto, setAuto } = useTimeOfDay();
+  const { timeOfDay, setTimeManually, isAuto, toggleAuto } = useTimeOfDay();
 
   const [contentType, setContentType] = useState<ContentType>("BOTH");
   const [userWeights, setUserWeights] = useState<UserWeights>({ mood: 50, time: 25, history: 25 });
@@ -223,7 +223,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
             <MoodSelector selectedMood={mood} onMoodChange={setMood} />
-            <TimeSelector currentTime={timeOfDay} onTimeChange={setTimeManually} isAuto={isAuto} onSetAuto={setAuto} />
+            <TimeSelector currentTime={timeOfDay} onTimeChange={setTimeManually} isAuto={isAuto} onToggleAuto={toggleAuto} />
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
             <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
