@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Image from 'next/image';
 import { Info, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface MovieCardProps {
   movie: MovieRecommendationItem;
@@ -51,7 +52,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
 
   return (
     <Card
-      className="group h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card cursor-pointer hover:scale-105 transform-gpu hover:border-primary hover:bg-accent-hover"
+      className="group h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card cursor-pointer hover:border-primary hover:bg-accent-hover"
       onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"
@@ -94,7 +95,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
           {movie.description}
         </CardDescription>
       </CardContent>
-      <CardFooter className="p-4 bg-secondary/50 border-t">
+      <CardFooter className="p-4 bg-secondary/50 border-t group-hover:bg-accent-hover group-hover:border-accent-hover">
         <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-hover-foreground">
           <Info className="h-5 w-5 text-primary shrink-0 mt-0.5 group-hover:text-accent-hover-foreground" />
           <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-hover-foreground">Why this?</span> {movie.reason}</p>
