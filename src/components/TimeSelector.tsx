@@ -74,9 +74,12 @@ export function TimeSelector({ currentTime, onTimeChange, isAuto, onToggleAuto }
               key={option.value}
               variant={currentTime === option.value ? 'default' : 'secondary'}
               className={cn(
-                'h-auto justify-start p-3 text-base gap-3',
-                // When in auto mode, the selected button should be fully opaque, not faded by the disabled state.
-                isAuto && currentTime === option.value && 'disabled:opacity-100'
+                'h-auto justify-start p-3 text-base gap-3 transition-colors',
+                isAuto && currentTime === option.value && 'disabled:opacity-100',
+                // If selected, override the default variant's hover to be a darker primary, not yellow.
+                currentTime === option.value ? 'hover:bg-primary/90'
+                // If NOT selected and manual mode is on, override the secondary variant's hover to be yellow.
+                : !isAuto && 'hover:bg-accent-hover hover:text-accent-hover-foreground'
               )}
               onClick={() => onTimeChange(option.value)}
               disabled={isAuto}

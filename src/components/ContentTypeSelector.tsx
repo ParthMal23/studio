@@ -40,11 +40,11 @@ export function ContentTypeSelector({ selectedContentType, onContentTypeChange }
                 'flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors',
                 selectedContentType === type.value
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
-                  : 'border-border bg-muted hover:bg-secondary'
+                  : 'border-border bg-muted text-foreground/70 hover:bg-accent-hover hover:text-accent-hover-foreground'
               )}
             >
               <RadioGroupItem value={type.value} id={`content-type-${type.value}`} className="sr-only" />
-              <type.icon className={cn('h-7 w-7 mb-1.5', selectedContentType !== type.value && 'text-foreground/70')} />
+              <type.icon className={cn('h-7 w-7 mb-1.5')} />
               <span className="text-sm font-medium">{type.label}</span>
             </Label>
           ))}
