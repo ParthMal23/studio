@@ -9,15 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Star, Clock } from 'lucide-react';
+import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Star, Clock, Feather, Compass, BrainCircuit } from 'lucide-react';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
   { value: "Sad", label: "Sad", icon: Frown },
   { value: "Relaxed", label: "Relaxed", icon: Coffee },
   { value: "Excited", label: "Excited", icon: Zap },
-  { value: "Calm", label: "Calm", icon: Coffee },
-  { value: "Adventurous", label: "Adventurous", icon: Zap },
+  { value: "Calm", label: "Calm", icon: Feather },
+  { value: "Adventurous", label: "Adventurous", icon: Compass },
+  { value: "Focused", label: "Focused", icon: BrainCircuit },
   { value: "Neutral", label: "Neutral", icon: Meh },
 ];
 

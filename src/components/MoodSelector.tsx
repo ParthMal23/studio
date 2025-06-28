@@ -4,15 +4,16 @@ import type { Mood } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion } from 'lucide-react'; // Zap for Excited, Coffee for Relaxed/Calm, ShieldQuestion for Neutral
+import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Feather, Compass, BrainCircuit } from 'lucide-react';
 
 const moods: { value: Mood; label: string; icon: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
   { value: "Sad", label: "Sad", icon: Frown },
   { value: "Relaxed", label: "Relaxed", icon: Coffee },
   { value: "Excited", label: "Excited", icon: Zap },
-  { value: "Calm", label: "Calm", icon: Coffee }, // Could use a different icon if available
-  { value: "Adventurous", label: "Adventurous", icon: Zap }, // Could use a different icon if available
+  { value: "Calm", label: "Calm", icon: Feather },
+  { value: "Adventurous", label: "Adventurous", icon: Compass },
+  { value: "Focused", label: "Focused", icon: BrainCircuit },
   { value: "Neutral", label: "Neutral", icon: Meh },
 ];
 
