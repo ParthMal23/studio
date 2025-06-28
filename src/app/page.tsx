@@ -196,7 +196,7 @@ export default function HomePage() {
               className="flex-grow text-base"
               onKeyPress={(e) => { if (e.key === 'Enter') handleGetTextQueryRecommendations(); }}
             />
-            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6" variant="secondary">
+            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6 bg-accent-hover text-accent-hover-foreground hover:bg-accent-hover/90">
               {isLoadingSearchRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <SearchIcon className="mr-2 h-5 w-5" />}
               Search
             </Button>
