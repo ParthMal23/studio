@@ -1,8 +1,9 @@
 
 import type { MovieRecommendationItem } from '@/lib/types';
 import { MovieCard } from './MovieCard';
-import { AlertTriangle, Zap, Users } from 'lucide-react';
+import { AlertTriangle, Zap, Users, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 interface MovieRecommendationsProps {
   recommendations: MovieRecommendationItem[] | undefined;
@@ -12,7 +13,8 @@ interface MovieRecommendationsProps {
   currentUserId: string | null;
   title: string; 
   emptyStateMessage?: string; 
-  showWhenEmpty?: boolean; 
+  showWhenEmpty?: boolean;
+  onRefresh?: () => void;
 }
 
 export function MovieRecommendations({
@@ -24,6 +26,7 @@ export function MovieRecommendations({
   title,
   emptyStateMessage = "Adjust your preferences and try again!",
   showWhenEmpty = true, 
+  onRefresh,
 }: MovieRecommendationsProps) {
   const currentRecommendations = recommendations || [];
   const IconComponent = title.toLowerCase().includes("group") ? Users : Zap;
@@ -73,9 +76,17 @@ export function MovieRecommendations({
 
   return (
     <div className="mt-8">
-      <h2 className="text-2xl font-headline font-semibold mb-6 text-primary flex items-center gap-2">
-        <IconComponent className="h-7 w-7 text-accent" /> {title}
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-headline font-semibold text-primary flex items-center gap-2">
+          <IconComponent className="h-7 w-7 text-accent" /> {title}
+        </h2>
+        {onRefresh && currentRecommendations.length > 0 && (
+            <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Show me others
+            </Button>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentRecommendations.map((movie, index) => (
           <MovieCard

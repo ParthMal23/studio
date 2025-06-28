@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType } from '@/lib/types';
-import { fetchContentRecommendationsAction, fetchTextQueryRecommendationsAction } from '@/lib/actions';
+import { fetchContentRecommendationsAction, fetchTextQueryRecommendationsAction, fetchSurpriseRecommendationsAction } from '@/lib/actions';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { AppHeader } from '@/components/AppHeader';
 import { MoodSelector } from '@/components/MoodSelector';
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Loader2, Search as SearchIcon, Zap } from 'lucide-react';
+import { RefreshCw, Loader2, Search as SearchIcon, Zap, Gift } from 'lucide-react';
 
 const USER_ID_KEY = 'selectedUserId';
 const PREFERENCES_KEY_PREFIX = 'userPreferences_';
@@ -40,7 +40,11 @@ export default function HomePage() {
   const [isLoadingSearchRecommendations, setIsLoadingSearchRecommendations] = useState(false);
   const [searchRecommendationError, setSearchRecommendationError] = useState<string | null>(null);
 
-  const [activeRecommendationType, setActiveRecommendationType] = useState<null | 'personal' | 'search'>(null);
+  const [surpriseRecommendations, setSurpriseRecommendations] = useState<MovieRecommendationItem[]>([]);
+  const [isLoadingSurprise, setIsLoadingSurprise] = useState(false);
+  const [surpriseError, setSurpriseError] = useState<string | null>(null);
+
+  const [activeRecommendationType, setActiveRecommendationType] = useState<null | 'personal' | 'search' | 'surprise'>(null);
 
   const { toast } = useToast();
   
@@ -92,6 +96,8 @@ export default function HomePage() {
     setRecommendations([]);
     setSearchRecommendations([]);
     setSearchRecommendationError(null);
+    setSurpriseRecommendations([]);
+    setSurpriseError(null);
     setSearchQuery('');
 
     const result = await fetchContentRecommendationsAction({ mood, timeOfDay, viewingHistory, contentType });
@@ -118,6 +124,8 @@ export default function HomePage() {
     setSearchRecommendations([]);
     setRecommendations([]);
     setRecommendationError(null);
+    setSurpriseRecommendations([]);
+    setSurpriseError(null);
 
     const result = await fetchTextQueryRecommendationsAction({ searchQuery, mood, timeOfDay, viewingHistory, contentType });
     setIsLoadingSearchRecommendations(false);
@@ -135,6 +143,33 @@ export default function HomePage() {
     }
     setActiveRecommendationType('search');
   }, [searchQuery, mood, timeOfDay, viewingHistory, contentType, toast, currentUserId]);
+
+  const handleGetSurpriseRecommendations = useCallback(async () => {
+    if (!currentUserId) return;
+    setIsLoadingSurprise(true);
+    setSurpriseError(null);
+    setRecommendations([]);
+    setRecommendationError(null);
+    setSearchRecommendations([]);
+    setSearchRecommendationError(null);
+
+    const result = await fetchSurpriseRecommendationsAction({ viewingHistory, contentType });
+    setIsLoadingSurprise(false);
+    if ('error' in result) {
+      setSurpriseError(result.error);
+      setSurpriseRecommendations([]);
+      toast({ title: "Surprise Error", description: result.error, variant: "destructive" });
+    } else {
+      setSurpriseRecommendations(result);
+      if (result.length === 0) {
+        toast({ title: "Hmm...", description: "Couldn't find a surprise this time. Try adding more to your history!" });
+      } else {
+         toast({ title: "Voila!", description: "Here's something unexpected for you!" });
+      }
+    }
+    setActiveRecommendationType('surprise');
+  }, [viewingHistory, contentType, toast, currentUserId]);
+
 
   const handleCardClick = (movie: MovieRecommendationItem) => {};
   
@@ -174,10 +209,16 @@ export default function HomePage() {
             <TimeSelector currentTime={timeOfDay} onTimeChange={setTimeManually} isAuto={isAuto} onToggleAuto={toggleAuto} />
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
-            <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
-              {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RefreshCw className="mr-2 h-5 w-5" />}
-              Get My Recommendations
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+               <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 bg-primary hover:bg-primary/90 flex-1">
+                {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                Get My Recommendations
+              </Button>
+              <Button onClick={handleGetSurpriseRecommendations} disabled={isLoadingSurprise} className="w-full text-lg py-6 bg-purple-600 hover:bg-purple-700 text-white flex-1">
+                {isLoadingSurprise ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Gift className="mr-2 h-5 w-5" />}
+                Surprise Me!
+              </Button>
+            </div>
           </div>
 
           <div className="lg:col-span-2 space-y-6">
@@ -187,6 +228,7 @@ export default function HomePage() {
                 onCardClick={handleCardClick} currentUserId={currentUserId}
                 title={searchQuery ? `Results for "${searchQuery}"` : "Search For Something"}
                 emptyStateMessage="No results for your search. Try a different query."
+                onRefresh={handleGetTextQueryRecommendations}
               />
             )}
             
@@ -196,6 +238,16 @@ export default function HomePage() {
                 onCardClick={handleCardClick} currentUserId={currentUserId}
                 title="Tailored For You"
                 emptyStateMessage="No personal recommendations yet. Adjust preferences or add to your watch history!"
+                onRefresh={handleGetRecommendations}
+              />
+            )}
+
+            {activeRecommendationType === 'surprise' && (
+              <MovieRecommendations
+                recommendations={surpriseRecommendations} isLoading={isLoadingSurprise} error={surpriseError}
+                onCardClick={handleCardClick} currentUserId={currentUserId}
+                title="Something Different"
+                emptyStateMessage="Couldn't conjure up a surprise. Try again!"
               />
             )}
 
