@@ -174,7 +174,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                   {moodsForSelection.map((mood) => (
                     <SelectItem key={mood.value} value={mood.value}>
                       <div className="flex items-center gap-2">
-                        {mood.icon && <mood.icon className="h-4 w-4 text-muted-foreground" />}
+                        {mood.icon && <mood.icon className="h-4 w-4" />}
                         {mood.label}
                       </div>
                     </SelectItem>
@@ -192,7 +192,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                   {timeOfDayOptions.map((time) => (
                     <SelectItem key={time.value} value={time.value}>
                       <div className="flex items-center gap-2">
-                        {time.icon && <time.icon className="h-4 w-4 text-muted-foreground" />}
+                        {time.icon && <time.icon className="h-4 w-4" />}
                         {time.label}
                       </div>
                     </SelectItem>

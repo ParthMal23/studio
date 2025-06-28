@@ -15,7 +15,6 @@ const navItems = [
 
 export function AppHeader() {
   const pathname = usePathname();
-  const hoverClasses = 'hover:bg-accent-hover hover:text-accent-hover-foreground';
 
   return (
     <header className="py-3 px-4 md:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50 text-foreground shadow-md sticky top-0 z-50">
@@ -32,7 +31,6 @@ export function AppHeader() {
                 <Button
                   variant="ghost"
                   className={cn(
-                    hoverClasses,
                     pathname === item.href && 'bg-accent/10 text-accent'
                   )}
                 >
@@ -47,7 +45,7 @@ export function AppHeader() {
         {/* Right side: Desktop Logout Button + Theme Toggle */}
         <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
-            <Button asChild variant="ghost" size="sm" className={cn(hoverClasses)}>
+            <Button asChild variant="ghost" size="sm">
                <Link href="/select-user">
                    <LogOut className="mr-2 h-4 w-4" />
                    Log Out
@@ -65,7 +63,6 @@ export function AppHeader() {
                   variant="ghost"
                   className={cn(
                     'w-full',
-                    hoverClasses,
                     pathname === item.href && 'bg-accent/20 text-accent'
                   )}
                 >
@@ -77,7 +74,7 @@ export function AppHeader() {
             <Link href="/select-user" passHref className="flex-1">
                 <Button
                   variant="ghost"
-                  className={cn('w-full', hoverClasses)}
+                  className={'w-full'}
                 >
                   <LogOut className="mr-2 h-5 w-5" />
                   <span className="text-xs">Log Out</span>
