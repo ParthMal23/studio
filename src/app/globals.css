@@ -66,6 +66,8 @@ h1, h2, h3, h4, h5, h6 {
     --muted-foreground: 215 20% 65%;
     --accent: 216 84% 78%;
     --accent-foreground: 222 47% 11%;
+    --accent-hover: 43 74% 66%; /* Yellow for dark mode hover */
+    --accent-hover-foreground: 0 0% 9%; /* Dark text for yellow hover */
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 223 39% 28%;

@@ -15,7 +15,7 @@ const navItems = [
 
 export function AppHeader() {
   const pathname = usePathname();
-  const hoverClasses = 'dark:hover:bg-accent/20 light:hover:bg-accent-hover light:hover:text-accent-hover-foreground';
+  const hoverClasses = 'hover:bg-accent-hover hover:text-accent-hover-foreground';
 
   return (
     <header className="py-3 px-4 md:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50 text-foreground shadow-md sticky top-0 z-50">
