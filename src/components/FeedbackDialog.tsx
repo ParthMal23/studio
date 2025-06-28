@@ -109,7 +109,7 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
                 <SelectValue placeholder="Select mood when watched" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="undefined">None (Optional)</SelectItem>
+                <SelectItem value="undefined">Don't know</SelectItem>
                 {moodsForSelection.map((mood) => (
                   <SelectItem key={mood.value} value={mood.value}>
                     <div className="flex items-center gap-2">

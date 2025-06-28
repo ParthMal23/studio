@@ -170,7 +170,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                   <SelectValue placeholder="Select mood" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="undefined">None</SelectItem>
+                  <SelectItem value="undefined">Don't know</SelectItem>
                   {moodsForSelection.map((mood) => (
                     <SelectItem key={mood.value} value={mood.value}>
                       <div className="flex items-center gap-2">
