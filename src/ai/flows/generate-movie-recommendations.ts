@@ -80,7 +80,7 @@ Each recommendation must adhere to the following structure:
 - reason: The reason for recommending this (string).
 - platform: The name of the OTT platform (string).
 
-Return a JSON array of 3-5 recommendations. Ensure the entire output is a valid JSON array.
+Return a JSON array of 6 recommendations. Ensure the entire output is a valid JSON array.
 Example of a single item:
 {
   "title": "Example Movie",

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for generating "surprise" content recommendations.
@@ -66,7 +67,7 @@ User's Viewing History (to recommend something DIFFERENT from):
 
 Preferred Content Type: {{{contentType}}}
 
-Return a JSON array of 3-4 recommendations. Ensure the entire output is a valid JSON array.
+Return a JSON array of 6 recommendations. Ensure the entire output is a valid JSON array.
 Example of a single item:
 {
   "title": "A Hidden Gem Movie",
