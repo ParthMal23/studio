@@ -95,10 +95,10 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
           {movie.description}
         </CardDescription>
       </CardContent>
-      <CardFooter className="p-4 bg-secondary/50 border-t group-hover:bg-accent-hover group-hover:border-accent-hover">
-        <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-hover-foreground">
-          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5 group-hover:text-accent-hover-foreground" />
-          <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-hover-foreground">Why this?</span> {movie.reason}</p>
+      <CardFooter className="p-4 bg-secondary/50 border-t group-hover:bg-accent-soft group-hover:border-accent-soft">
+        <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
+          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5 group-hover:text-accent-soft-foreground" />
+          <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
         </div>
       </CardFooter>
     </Card>

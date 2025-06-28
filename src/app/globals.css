@@ -28,6 +28,8 @@ h1, h2, h3, h4, h5, h6 {
     --accent-foreground: 0 0% 98%; /* Switched from dark text to light */
     --accent-hover: 43 74% 66%; /* Yellow for light mode hover */
     --accent-hover-foreground: 0 0% 9%; /* Dark text for yellow hover */
+    --accent-soft: 43 74% 80%;
+    --accent-soft-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
@@ -70,6 +72,8 @@ h1, h2, h3, h4, h5, h6 {
     --accent-foreground: 222 47% 11%;
     --accent-hover: 43 74% 66%; /* Yellow for dark mode hover */
     --accent-hover-foreground: 0 0% 9%; /* Dark text for yellow hover */
+    --accent-soft: 43 74% 80%;
+    --accent-soft-foreground: 0 0% 9%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 223 39% 28%;
