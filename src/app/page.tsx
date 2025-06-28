@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType } from '@/lib/types';
 import { fetchContentRecommendationsAction, fetchTextQueryRecommendationsAction } from '@/lib/actions';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
@@ -12,21 +11,22 @@ import { TimeSelector } from '@/components/TimeSelector';
 import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
-import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Loader2, Search as SearchIcon, Zap } from 'lucide-react';
 
-type PendingFeedbackStorageItem = Pick<MovieRecommendationItem, 'title' | 'platform' | 'description' | 'reason' | 'posterUrl'>;
+const USER_ID_KEY = 'selectedUserId';
+const PREFERENCES_KEY_PREFIX = 'userPreferences_';
+const HISTORY_KEY_PREFIX = 'viewingHistory_';
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
-  
+  const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   const [mood, setMood] = useState<Mood>("Neutral");
   const { timeOfDay, setTimeManually, isAuto, toggleAuto } = useTimeOfDay();
-
   const [contentType, setContentType] = useState<ContentType>("BOTH");
   const [userWeights, setUserWeights] = useState<UserWeights>({ mood: 50, time: 25, history: 25 });
   const [viewingHistory, setViewingHistory] = useState<ViewingHistoryEntry[]>([]);
@@ -42,17 +42,51 @@ export default function HomePage() {
 
   const [activeRecommendationType, setActiveRecommendationType] = useState<null | 'personal' | 'search'>(null);
 
-  const [pendingFeedbackItemForDialog, setPendingFeedbackItemForDialog] = useState<PendingFeedbackStorageItem | null>(null);
-  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
-
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const userId = localStorage.getItem(USER_ID_KEY);
+    if (!userId) {
+      router.push('/select-user');
+    } else {
+      setCurrentUserId(userId);
+      const savedPrefs = localStorage.getItem(`${PREFERENCES_KEY_PREFIX}${userId}`);
+      if (savedPrefs) {
+        try {
+          const { mood, contentType, userWeights } = JSON.parse(savedPrefs);
+          if (mood) setMood(mood);
+          if (contentType) setContentType(contentType);
+          if (userWeights) setUserWeights(userWeights);
+        } catch (e) {
+            console.error("Failed to parse preferences from localStorage", e);
+        }
+      }
+      const savedHistory = localStorage.getItem(`${HISTORY_KEY_PREFIX}${userId}`);
+      if (savedHistory) {
+         try {
+            setViewingHistory(JSON.parse(savedHistory));
+         } catch(e) {
+            console.error("Failed to parse history from localStorage", e);
+         }
+      }
+    }
+  }, [router]);
 
-  // NOTE: In a real app, preferences and history would be fetched from the DB
-  // For now, we are starting with a clean slate for each authenticated user session.
-  // Phase 2 will involve fetching/saving this data.
+  useEffect(() => {
+    if (currentUserId) {
+      const prefsToSave = JSON.stringify({ mood, contentType, userWeights });
+      localStorage.setItem(`${PREFERENCES_KEY_PREFIX}${currentUserId}`, prefsToSave);
+    }
+  }, [mood, contentType, userWeights, currentUserId]);
+
+  useEffect(() => {
+    if (currentUserId) {
+      localStorage.setItem(`${HISTORY_KEY_PREFIX}${currentUserId}`, JSON.stringify(viewingHistory));
+    }
+  }, [viewingHistory, currentUserId]);
 
   const handleGetRecommendations = useCallback(async () => {
-    if (!timeOfDay || status !== 'authenticated') return;
+    if (!timeOfDay || !currentUserId) return;
     setIsLoadingRecommendations(true);
     setRecommendationError(null);
     setRecommendations([]);
@@ -75,10 +109,10 @@ export default function HomePage() {
       }
     }
     setActiveRecommendationType('personal');
-  }, [mood, timeOfDay, viewingHistory, contentType, toast, status]);
+  }, [mood, timeOfDay, viewingHistory, contentType, toast, currentUserId]);
 
   const handleGetTextQueryRecommendations = useCallback(async () => {
-    if (!searchQuery.trim() || !timeOfDay || status !== 'authenticated') return;
+    if (!searchQuery.trim() || !timeOfDay || !currentUserId) return;
     setIsLoadingSearchRecommendations(true);
     setSearchRecommendationError(null);
     setSearchRecommendations([]);
@@ -100,19 +134,11 @@ export default function HomePage() {
       }
     }
     setActiveRecommendationType('search');
-  }, [searchQuery, mood, timeOfDay, viewingHistory, contentType, toast, status]);
+  }, [searchQuery, mood, timeOfDay, viewingHistory, contentType, toast, currentUserId]);
 
   const handleCardClick = (movie: MovieRecommendationItem) => {};
-
-  const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
-    const newEntry: ViewingHistoryEntry = { ...feedback, id: Date.now().toString() };
-    setViewingHistory(prevHistory => [...prevHistory, newEntry]);
-    setIsFeedbackDialogOpen(false);
-    setPendingFeedbackItemForDialog(null);
-    toast({ title: "History Updated", description: `${feedback.title} added to your viewing history.` });
-  };
   
-  if (status === 'loading') {
+  if (!currentUserId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -158,7 +184,7 @@ export default function HomePage() {
             {activeRecommendationType === 'search' && (
               <MovieRecommendations
                 recommendations={searchRecommendations} isLoading={isLoadingSearchRecommendations} error={searchRecommendationError}
-                onCardClick={handleCardClick} currentUserId={session?.user.id || null}
+                onCardClick={handleCardClick} currentUserId={currentUserId}
                 title={searchQuery ? `Results for "${searchQuery}"` : "Search For Something"}
                 emptyStateMessage="No results for your search. Try a different query."
               />
@@ -167,7 +193,7 @@ export default function HomePage() {
             {activeRecommendationType === 'personal' && (
               <MovieRecommendations
                 recommendations={recommendations} isLoading={isLoadingRecommendations} error={recommendationError}
-                onCardClick={handleCardClick} currentUserId={session?.user.id || null}
+                onCardClick={handleCardClick} currentUserId={currentUserId}
                 title="Tailored For You"
                 emptyStateMessage="No personal recommendations yet. Adjust preferences or add to your watch history!"
               />
@@ -185,16 +211,6 @@ export default function HomePage() {
           </div>
         </div>
       </main>
-      {pendingFeedbackItemForDialog && (
-        <FeedbackDialog
-          isOpen={isFeedbackDialogOpen}
-          onClose={() => { setIsFeedbackDialogOpen(false); setPendingFeedbackItemForDialog(null); }}
-          onSubmit={handleFeedbackSubmit}
-          movieItem={pendingFeedbackItemForDialog}
-          currentTimeOfDayAtWatch={timeOfDay}
-          initialMoodAtWatch={mood} 
-        />
-      )}
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
         FireSync &copy; {new Date().getFullYear()} - Your Personal Content Guide
       </footer>

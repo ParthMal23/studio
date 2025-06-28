@@ -1,23 +1,32 @@
-
 "use client";
 
-import { useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
-import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType, UserProfileDataForGroupRecs } from '@/lib/types';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import type { MovieRecommendationItem } from '@/lib/types';
 import { AppHeader } from '@/components/AppHeader';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
-import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users } from 'lucide-react';
-import { useTimeOfDay } from '@/hooks/useTimeOfDay';
+
+const USER_ID_KEY = 'selectedUserId';
 
 export default function GroupPage() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    const userId = localStorage.getItem(USER_ID_KEY);
+    if (!userId) {
+      router.push('/select-user');
+    } else {
+      setCurrentUserId(userId);
+    }
+  }, [router]);
 
   const handleFetchGroupRecommendations = useCallback(async () => {
     toast({
@@ -26,7 +35,7 @@ export default function GroupPage() {
     });
   }, [toast]);
 
-  if (status === 'loading') {
+  if (!currentUserId) {
      return (
       <div className="min-h-screen flex flex-col">
         <AppHeader />
@@ -68,7 +77,7 @@ export default function GroupPage() {
             isLoading={false}
             error={null}
             onCardClick={() => {}}
-            currentUserId={session?.user.id || null} 
+            currentUserId={currentUserId} 
             title="Group Picks"
             emptyStateMessage="Select a friend and click 'Get Group Recommendations' to start."
           />

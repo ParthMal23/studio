@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood, TimeOfDay } from '@/lib/types';
 import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { AppHeader } from '@/components/AppHeader';
@@ -13,8 +12,12 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Lightbulb } from 'lucide-react';
 
+const USER_ID_KEY = 'selectedUserId';
+const HISTORY_KEY_PREFIX = 'viewingHistory_';
+
 export default function HistoryPage() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [viewingHistory, setViewingHistory] = useState<ViewingHistoryEntry[]>([]);
   const { timeOfDay } = useTimeOfDay();
@@ -24,17 +27,28 @@ export default function HistoryPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const { toast } = useToast();
-  
-  // NOTE: Viewing history is currently stored in-memory per session.
-  // Phase 2 will involve fetching/saving this data to the database.
+
   useEffect(() => {
-    if (status === 'authenticated') {
-      // Here you would fetch viewing history from your database for the logged-in user.
-      // e.g., fetch(`/api/history?userId=${session.user.id}`).then(...)
-      // For now, it will be empty on each page load.
-      setViewingHistory([]);
+    const userId = localStorage.getItem(USER_ID_KEY);
+    if (!userId) {
+      router.push('/select-user');
+    } else {
+      setCurrentUserId(userId);
+      const savedHistory = localStorage.getItem(`${HISTORY_KEY_PREFIX}${userId}`);
+      if (savedHistory) {
+        setViewingHistory(JSON.parse(savedHistory));
+      } else {
+        setViewingHistory([]);
+      }
     }
-  }, [status]);
+  }, [router]);
+  
+  const handleHistoryChange = useCallback((newHistory: ViewingHistoryEntry[]) => {
+      setViewingHistory(newHistory);
+      if(currentUserId) {
+        localStorage.setItem(`${HISTORY_KEY_PREFIX}${currentUserId}`, JSON.stringify(newHistory));
+      }
+  }, [currentUserId]);
 
 
   const handleAnalyzePatterns = async () => {
@@ -54,7 +68,7 @@ export default function HistoryPage() {
     }
   };
   
-  if (status === 'loading') {
+  if (!currentUserId) {
     return (
       <div className="min-h-screen flex flex-col">
         <AppHeader />
@@ -72,7 +86,7 @@ export default function HistoryPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           <ViewingHistoryTracker
             viewingHistory={viewingHistory}
-            onHistoryChange={setViewingHistory}
+            onHistoryChange={handleHistoryChange}
             currentMood={mood} 
             currentTime={timeOfDay}
             onAnalyze={handleAnalyzePatterns}

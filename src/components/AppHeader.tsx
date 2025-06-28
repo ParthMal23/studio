@@ -1,13 +1,10 @@
-
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
-import { Film, LogOut, Home, History, Users, LogIn } from 'lucide-react';
+import { Film, Home, History, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Skeleton } from './ui/skeleton';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -16,12 +13,7 @@ const navItems = [
 ];
 
 export function AppHeader() {
-  const { data: session, status } = useSession();
   const pathname = usePathname();
-
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/login' });
-  };
 
   return (
     <header className="py-3 px-4 md:px-8 bg-primary text-primary-foreground shadow-md">
@@ -49,28 +41,12 @@ export function AppHeader() {
         </nav>
 
         <div className="flex items-center">
-          {status === 'loading' && (
-            <Skeleton className="h-9 w-28 bg-primary-foreground/20" />
-          )}
-          {status === 'authenticated' && session.user && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="hover:bg-primary-foreground/10 text-primary-foreground"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout ({session.user.name})
+            <Button asChild variant="ghost" size="sm" className="hover:bg-primary-foreground/10 text-primary-foreground">
+               <Link href="/select-user">
+                   <User className="mr-2 h-4 w-4" />
+                   Switch User
+               </Link>
             </Button>
-          )}
-           {status === 'unauthenticated' && (
-             <Button asChild variant="ghost" size="sm" className="hover:bg-primary-foreground/10 text-primary-foreground">
-                <Link href="/login">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login
-                </Link>
-             </Button>
-            )}
         </div>
       </div>
        {/* Mobile Nav */}
