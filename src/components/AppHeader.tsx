@@ -1,6 +1,6 @@
 'use client';
 
-import { Film, Home, History, Users, User } from 'lucide-react';
+import { Film, Home, History, Users, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -43,8 +43,8 @@ export function AppHeader() {
         <div className="flex items-center">
             <Button asChild variant="ghost" size="sm" className="hover:bg-primary-foreground/10 text-primary-foreground">
                <Link href="/select-user">
-                   <User className="mr-2 h-4 w-4" />
-                   Switch User
+                   <LogOut className="mr-2 h-4 w-4" />
+                   Log Out
                </Link>
             </Button>
         </div>
