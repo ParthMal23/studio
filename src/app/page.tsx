@@ -11,6 +11,7 @@ import { TimeSelector } from '@/components/TimeSelector';
 import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,15 @@ import { RefreshCw, Loader2, Search as SearchIcon, Zap, Gift } from 'lucide-reac
 const USER_ID_KEY = 'selectedUserId';
 const PREFERENCES_KEY_PREFIX = 'userPreferences_';
 const HISTORY_KEY_PREFIX = 'viewingHistory_';
+
+// This type is needed for the feedback dialog
+type PendingFeedbackStorageItem = {
+  title: string;
+  platform: string;
+  description?: string;
+  reason?: string;
+  posterUrl?: string;
+};
 
 export default function HomePage() {
   const router = useRouter();
@@ -45,6 +55,10 @@ export default function HomePage() {
   const [surpriseError, setSurpriseError] = useState<string | null>(null);
 
   const [activeRecommendationType, setActiveRecommendationType] = useState<null | 'personal' | 'search' | 'surprise'>(null);
+
+  // New state for the feedback dialog
+  const [pendingFeedbackItem, setPendingFeedbackItem] = useState<PendingFeedbackStorageItem | null>(null);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
   const { toast } = useToast();
   
@@ -75,6 +89,37 @@ export default function HomePage() {
       }
     }
   }, [router]);
+  
+  // useEffect to check sessionStorage for pending feedback
+  useEffect(() => {
+    if (currentUserId) {
+        const checkSessionStorageForFeedback = () => {
+            const SS_PENDING_FEEDBACK_KEY = `pendingFeedbackItem_${currentUserId}`;
+            try {
+                const storedItem = sessionStorage.getItem(SS_PENDING_FEEDBACK_KEY);
+                if (storedItem) {
+                    const item: PendingFeedbackStorageItem = JSON.parse(storedItem);
+                    setPendingFeedbackItem(item);
+                    setIsFeedbackDialogOpen(true);
+                    sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY);
+                }
+            } catch (e) {
+                console.error("Failed to parse pending feedback item from sessionStorage", e);
+                // Clear potentially corrupted item
+                sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY);
+            }
+        };
+
+        checkSessionStorageForFeedback(); // Check once on mount after userId is set
+        
+        // Also check when the user returns to the tab
+        window.addEventListener('focus', checkSessionStorageForFeedback);
+
+        return () => {
+            window.removeEventListener('focus', checkSessionStorageForFeedback);
+        };
+    }
+  }, [currentUserId]);
 
   useEffect(() => {
     if (currentUserId) {
@@ -170,6 +215,20 @@ export default function HomePage() {
     setActiveRecommendationType('surprise');
   }, [viewingHistory, contentType, toast, currentUserId]);
 
+  // New handler for submitting feedback from the dialog
+  const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
+    const newHistoryEntry: ViewingHistoryEntry = {
+        ...feedback,
+        id: Date.now().toString(),
+    };
+    setViewingHistory(prev => [...prev, newHistoryEntry]);
+    setIsFeedbackDialogOpen(false);
+    setPendingFeedbackItem(null);
+    toast({
+        title: "History Updated!",
+        description: `${feedback.title} has been added to your viewing history.`,
+    });
+  };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {};
   
@@ -266,6 +325,14 @@ export default function HomePage() {
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
         FireSync &copy; {new Date().getFullYear()} - Your Personal Content Guide
       </footer>
+      <FeedbackDialog
+        isOpen={isFeedbackDialogOpen}
+        onClose={() => setIsFeedbackDialogOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+        movieItem={pendingFeedbackItem}
+        currentTimeOfDayAtWatch={timeOfDay}
+        initialMoodAtWatch={mood}
+      />
     </div>
   );
 }
