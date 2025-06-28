@@ -17,30 +17,33 @@ export function AppHeader() {
 
   return (
     <header className="py-3 px-4 md:px-8 bg-primary text-primary-foreground shadow-md">
-      <div className="container mx-auto flex items-center justify-between flex-wrap">
-        <div className="flex items-center gap-3">
-          <Film className="h-8 w-8" />
-          <h1 className="text-3xl font-headline font-bold">FireSync</h1>
+      <div className="container mx-auto flex items-center justify-between">
+        {/* Left side: Logo + Desktop Nav */}
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3">
+            <Film className="h-8 w-8" />
+            <h1 className="text-3xl font-headline font-bold">FireSync</h1>
+          </div>
+          <nav className="hidden md:flex items-center gap-2">
+            {navItems.map((item) => (
+              <Link key={item.href} href={item.href} passHref>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    'hover:bg-primary-foreground/10 text-primary-foreground',
+                    pathname === item.href && 'bg-primary-foreground/20'
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Button>
+              </Link>
+            ))}
+          </nav>
         </div>
 
-        <nav className="hidden md:flex items-center gap-2">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} passHref>
-              <Button
-                variant="ghost"
-                className={cn(
-                  'hover:bg-primary-foreground/10 text-primary-foreground',
-                  pathname === item.href && 'bg-primary-foreground/20'
-                )}
-              >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.label}
-              </Button>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center">
+        {/* Right side: Desktop Logout Button */}
+        <div className="hidden md:flex items-center">
             <Button asChild variant="ghost" size="sm" className="hover:bg-primary-foreground/10 text-primary-foreground">
                <Link href="/select-user">
                    <LogOut className="mr-2 h-4 w-4" />
@@ -49,7 +52,8 @@ export function AppHeader() {
             </Button>
         </div>
       </div>
-       {/* Mobile Nav */}
+
+       {/* Mobile Nav (includes Logout) */}
        <div className="md:hidden mt-3 container mx-auto">
         <nav className="flex items-center justify-around gap-1 rounded-md bg-primary-foreground/10 p-1">
             {navItems.map((item) => (
@@ -66,6 +70,15 @@ export function AppHeader() {
                 </Button>
               </Link>
             ))}
+            <Link href="/select-user" passHref className="flex-1">
+                <Button
+                  variant="ghost"
+                  className='w-full hover:bg-primary-foreground/10 text-primary-foreground'
+                >
+                  <LogOut className="mr-2 h-5 w-5" />
+                  <span className="text-xs">Log Out</span>
+                </Button>
+              </Link>
           </nav>
         </div>
     </header>
