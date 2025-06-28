@@ -1,4 +1,5 @@
-import mongoose, { Schema, models, Document } from 'mongoose';
+
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   name: string;
@@ -28,6 +29,6 @@ const UserSchema = new Schema<IUser>({
   },
 }, { timestamps: true }); // Mongoose's timestamps option handles createdAt and updatedAt automatically
 
-const User = models.User || mongoose.model<IUser>('User', UserSchema);
+const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 
 export default User;

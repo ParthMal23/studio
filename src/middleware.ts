@@ -8,3 +8,5 @@ export default auth;
 export const config = {
   matcher: ["/((?!api/auth/signup|_next/static|_next/image|favicon.ico|login|signup).*)"],
 }
+
+export const runtime = 'nodejs';
