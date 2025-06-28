@@ -53,7 +53,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
 
   return (
     <Card
-      className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out animate-fade-in-up bg-card cursor-pointer"
+      className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out animate-fade-in-up bg-card cursor-pointer hover:scale-105"
       style={{ animationDelay }}
       onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
