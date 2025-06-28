@@ -9,7 +9,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users } from 'lucide-react';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
@@ -207,33 +207,33 @@ export default function GroupPage() {
     <div className="min-h-screen flex flex-col">
       <AppHeader currentUserId={currentUserDisplayName} onLogout={handleLogout} />
       <main className="container mx-auto p-4 md:p-8 flex-grow flex flex-col items-center">
-        <div className="w-full max-w-md p-6 bg-card shadow-lg rounded-lg border">
-            <DialogHeader>
-              <DialogTitle className="text-center text-2xl font-headline flex items-center justify-center gap-2">
-                <Users className="h-7 w-7 text-primary" />
-                Watch With a Friend
-              </DialogTitle>
-              <DialogDescription className="text-center">
-                Choose who you'd like to get group recommendations with.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-2">
-              <p className="text-sm text-muted-foreground">You are: <span className="font-semibold text-primary">{currentUserDisplayName}</span></p>
-              <Button 
-                variant={potentialGroupPartnerId === otherUserInternalId ? 'default' : 'outline'} 
-                onClick={() => setPotentialGroupPartnerId(otherUserInternalId)}
-                className="w-full"
-              >
-                {otherUserDisplayName}
-              </Button>
-            </div>
-            <DialogFooter>
-              <Button onClick={handleFetchGroupRecommendations} className="w-full" disabled={!potentialGroupPartnerId || isLoadingGroupRecommendations}>
-                {isLoadingGroupRecommendations ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Get Group Recommendations
-              </Button>
-            </DialogFooter>
-        </div>
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader className="text-center items-center">
+            <CardTitle className="text-2xl font-headline flex items-center justify-center gap-2">
+              <Users className="h-7 w-7 text-primary" />
+              Watch With a Friend
+            </CardTitle>
+            <CardDescription>
+              Choose who you'd like to get group recommendations with.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-muted-foreground">You are: <span className="font-semibold text-primary">{currentUserDisplayName}</span></p>
+            <Button 
+              variant={potentialGroupPartnerId === otherUserInternalId ? 'default' : 'outline'} 
+              onClick={() => setPotentialGroupPartnerId(otherUserInternalId)}
+              className="w-full"
+            >
+              {otherUserDisplayName}
+            </Button>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleFetchGroupRecommendations} className="w-full" disabled={!potentialGroupPartnerId || isLoadingGroupRecommendations}>
+              {isLoadingGroupRecommendations ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Get Group Recommendations
+            </Button>
+          </CardFooter>
+        </Card>
         
         <div className="w-full mt-8">
           <MovieRecommendations
