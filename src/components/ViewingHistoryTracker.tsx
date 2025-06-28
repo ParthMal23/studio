@@ -18,7 +18,7 @@ const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType 
   { value: "Sad", label: "Sad", icon: Frown },
   { value: "Goofy", label: "Goofy", icon: SmilePlus },
   { value: "Excited", label: "Excited", icon: Zap },
-  { value: "Calm", label: "Calm", icon: Feather },
+  { value: "Relaxed", label: "Relaxed", icon: Feather },
   { value: "Adventurous", label: "Adventurous", icon: Compass },
   { value: "Romantic", label: "Romantic", icon: Heart },
   { value: "Neutral", label: "Neutral", icon: Meh },
