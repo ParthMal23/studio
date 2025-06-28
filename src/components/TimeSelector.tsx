@@ -2,7 +2,6 @@
 "use client";
 
 import type { TimeOfDay } from '@/lib/types';
-// Removed: import { useTimeOfDay } from '@/hooks/useTimeOfDay'; // No longer used here
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,10 +17,10 @@ const timeOfDayOptions: { value: TimeOfDay; label: string, icon: React.ElementTy
 ];
 
 interface TimeSelectorProps {
-  currentTime: TimeOfDay | undefined; // Receives current time from HomePage
-  onTimeChange: (time: TimeOfDay) => void; // Callback to update time in HomePage (calls setManually)
-  isAuto: boolean; // Receives auto status from HomePage
-  onSetAuto: () => void; // Callback to set auto mode in HomePage
+  currentTime: TimeOfDay | undefined;
+  onTimeChange: (time: TimeOfDay) => void;
+  isAuto: boolean;
+  onSetAuto: () => void;
 }
 
 export function TimeSelector({ currentTime, onTimeChange, isAuto, onSetAuto }: TimeSelectorProps) {
@@ -33,11 +32,11 @@ export function TimeSelector({ currentTime, onTimeChange, isAuto, onSetAuto }: T
 
   const handleSelectChange = (value: string) => {
     const newTime = value as TimeOfDay;
-    onTimeChange(newTime); // Propagate change to HomePage (which will call setManually)
+    onTimeChange(newTime);
   };
 
   const handleSetAuto = () => {
-    onSetAuto(); // Propagate auto-set to HomePage
+    onSetAuto();
   };
 
   if (!isClientMounted) {
@@ -81,7 +80,7 @@ export function TimeSelector({ currentTime, onTimeChange, isAuto, onSetAuto }: T
           <Select
             value={currentTime || ""} 
             onValueChange={handleSelectChange}
-            disabled={!currentTime && !isAuto} // Allow select if auto and loading, or if manual and set
+            disabled={!currentTime}
           >
             <SelectTrigger id="time-select" className="w-full">
               <SelectValue placeholder="Select time of day" />
