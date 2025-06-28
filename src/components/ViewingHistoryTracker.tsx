@@ -1,46 +1,62 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
-import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood, TimeOfDay } from '@/lib/types';
+import { useState, useRef, useEffect } from 'react';
+import type { ViewingHistoryEntry, Mood, TimeOfDay } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Clock } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Drama, Clock, Coffee, Compass, Heart, Sun, CloudSun, CloudMoon, Moon } from 'lucide-react';
 import Papa from 'papaparse';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
   { value: "Sad", label: "Sad", icon: Frown },
-  { value: "Relaxed", label: "Relaxed", icon: Coffee },
+  { value: "Goofy", label: "Goofy", icon: Drama },
   { value: "Excited", label: "Excited", icon: Zap },
-  { value: "Calm", label: "Calm", icon: Coffee },
-  { value: "Adventurous", label: "Adventurous", icon: Zap },
+  { value: "Relaxed", label: "Relaxed", icon: Coffee },
+  { value: "Adventurous", label: "Adventurous", icon: Compass },
+  { value: "Romantic", label: "Romantic", icon: Heart },
   { value: "Neutral", label: "Neutral", icon: Meh },
 ];
+
+const timeOfDayOptions: { value: TimeOfDay; label: string, icon: React.ElementType }[] = [
+    { value: "Morning", label: "Morning", icon: Sun },
+    { value: "Afternoon", label: "Afternoon", icon: CloudSun },
+    { value: "Evening", label: "Evening", icon: CloudMoon },
+    { value: "Night", label: "Night", icon: Moon },
+];
+
 
 interface ViewingHistoryTrackerProps {
   viewingHistory: ViewingHistoryEntry[];
   onHistoryChange: (history: ViewingHistoryEntry[]) => void;
   currentMood: Mood;
   currentTime: TimeOfDay | undefined;
+  onAnalyze: () => void;
+  isAnalyzing: boolean;
 }
 
-export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, currentMood, currentTime }: ViewingHistoryTrackerProps) {
+export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, currentMood, currentTime, onAnalyze, isAnalyzing }: ViewingHistoryTrackerProps) {
   const [newMovieTitle, setNewMovieTitle] = useState('');
   const [newMovieRating, setNewMovieRating] = useState(3);
   const [newMovieCompleted, setNewMovieCompleted] = useState(true);
-  const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(undefined);
-  // Time of day for manual add will use the `currentTime` prop
-  const [analysisResult, setAnalysisResult] = useState<WatchPatternAnalysis | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(currentMood);
+  const [newMovieTimeOfDayAtWatch, setNewMovieTimeOfDayAtWatch] = useState<TimeOfDay | undefined>(currentTime);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setNewMovieMoodAtWatch(currentMood);
+  }, [currentMood]);
+
+  useEffect(() => {
+    setNewMovieTimeOfDayAtWatch(currentTime);
+  }, [currentTime]);
 
   const handleAddMovie = () => {
     if (!newMovieTitle.trim()) {
@@ -53,36 +69,20 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       rating: newMovieRating,
       completed: newMovieCompleted,
       moodAtWatch: newMovieMoodAtWatch,
-      timeOfDayAtWatch: currentTime, // Add current time of day
+      timeOfDayAtWatch: newMovieTimeOfDayAtWatch,
     };
     onHistoryChange([...viewingHistory, newEntry]);
     setNewMovieTitle('');
     setNewMovieRating(3);
     setNewMovieCompleted(true);
-    setNewMovieMoodAtWatch(undefined);
+    setNewMovieMoodAtWatch(currentMood);
+    setNewMovieTimeOfDayAtWatch(currentTime);
     toast({ title: "History Updated", description: `${newMovieTitle} added to your viewing history.` });
   };
 
   const handleRemoveMovie = (id: string) => {
     onHistoryChange(viewingHistory.filter(movie => movie.id !== id));
     toast({ title: "History Updated", description: `Item removed from your viewing history.` });
-  };
-
-  const handleAnalyzePatterns = async () => {
-    if (!currentTime) {
-      toast({ title: "Error", description: "Current time not available for analysis.", variant: "destructive" });
-      return;
-    }
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
-    const result = await analyzeWatchPatternsAction({ viewingHistory, currentMood, currentTime });
-    setIsAnalyzing(false);
-    if ('error' in result) {
-      toast({ title: "Analysis Failed", description: result.error, variant: "destructive" });
-    } else {
-      setAnalysisResult(result);
-      toast({ title: "Analysis Complete", description: "Watch patterns analyzed successfully." });
-    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +104,6 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
         results.data.forEach((row, index) => {
           const title = row['Title'] || row['title'];
           if (title) {
-            // CSV imports won't have mood or time of day at watch initially
             newEntries.push({
               id: `${Date.now()}-${index}`,
               title: title.trim(),
@@ -140,9 +139,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <History className="h-6 w-6" /> Your Viewing History
           </CardTitle>
-          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.
-            {currentTime && <span className="block text-xs mt-1">Items added manually will note time as <Clock className="inline h-3 w-3 mr-0.5" /> {currentTime}.</span>}
-          </CardDescription>
+          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -154,7 +151,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               placeholder="e.g., The Grand Adventure"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="item-rating">Rating (1-5)</Label>
               <Input
@@ -167,8 +164,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               />
             </div>
             <div>
-              <Label htmlFor="item-mood-at-watch">Mood When Watched (Optional)</Label>
-              <Select value={newMovieMoodAtWatch} onValueChange={(value) => setNewMovieMoodAtWatch(value as Mood)}>
+              <Label htmlFor="item-mood-at-watch">Mood When Watched</Label>
+              <Select value={newMovieMoodAtWatch} onValueChange={(value) => setNewMovieMoodAtWatch(value === "undefined" ? undefined : value as Mood)}>
                 <SelectTrigger id="item-mood-at-watch">
                   <SelectValue placeholder="Select mood" />
                 </SelectTrigger>
@@ -179,6 +176,24 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                       <div className="flex items-center gap-2">
                         {mood.icon && <mood.icon className="h-4 w-4 text-muted-foreground" />}
                         {mood.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="item-time-at-watch">Time When Watched</Label>
+               <Select value={newMovieTimeOfDayAtWatch} onValueChange={(value) => setNewMovieTimeOfDayAtWatch(value as TimeOfDay)}>
+                <SelectTrigger id="item-time-at-watch">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOfDayOptions.map((time) => (
+                    <SelectItem key={time.value} value={time.value}>
+                      <div className="flex items-center gap-2">
+                        {time.icon && <time.icon className="h-4 w-4 text-muted-foreground" />}
+                        {time.label}
                       </div>
                     </SelectItem>
                   ))}
@@ -238,39 +253,11 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
             </ul>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleAnalyzePatterns} disabled={isAnalyzing || viewingHistory.length === 0} className="w-full">
+            <Button onClick={onAnalyze} disabled={isAnalyzing || viewingHistory.length === 0} className="w-full">
               {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
               Analyze Watch Patterns
             </Button>
           </CardFooter>
-        </Card>
-      )}
-
-      {analysisResult && (
-        <Card className="shadow-lg animate-fade-in-up">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-             <Lightbulb className="h-6 w-6 text-accent" /> Watch Pattern Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {analysisResult.explanation && <p><span className="font-semibold">Explanation:</span> {analysisResult.explanation}</p>}
-            {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight:</span> {analysisResult.moodWeight}%</p>}
-            {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight:</span> {analysisResult.historyWeight}%</p>}
-            {analysisResult.contentMix && analysisResult.contentMix.length > 0 && (
-              <div>
-                <p className="font-semibold">Suggested Content Mix:</p>
-                <ul className="list-disc list-inside ml-4">
-                  {analysisResult.contentMix.map((item) => (
-                    <li key={item.genre}>{item.genre}: {(item.proportion * 100).toFixed(0)}%</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-             {analysisResult.contentMix && analysisResult.contentMix.length === 0 && (
-                <p><span className="font-semibold">Suggested Content Mix:</span> No specific mix suggested.</p>
-            )}
-          </CardContent>
         </Card>
       )}
     </div>
