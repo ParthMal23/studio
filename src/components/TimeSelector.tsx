@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { TimeOfDay } from '@/lib/types';
@@ -71,14 +72,15 @@ export function TimeSelector({ currentTime, onTimeChange, isAuto, onToggleAuto }
           {timeOfDayOptions.map((option) => (
             <Button
               key={option.value}
-              variant={currentTime === option.value && !isAuto ? 'default' : 'outline'}
+              variant={currentTime === option.value ? 'default' : 'outline'}
               className={cn(
                 'h-auto justify-start p-3 text-base gap-3',
-                isAuto && currentTime === option.value && 'border-primary bg-primary/10 text-primary'
+                // When in auto mode, the selected button should be fully opaque, not faded by the disabled state.
+                isAuto && currentTime === option.value && 'disabled:opacity-100'
               )}
               onClick={() => onTimeChange(option.value)}
               disabled={isAuto}
-              aria-pressed={!isAuto && currentTime === option.value}
+              aria-pressed={currentTime === option.value}
             >
               <option.icon className="h-5 w-5" />
               <span>{option.label}</span>
