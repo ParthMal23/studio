@@ -5,6 +5,7 @@ import { generateContentRecommendations, GenerateContentRecommendationsInput, Co
 import { analyzeWatchPatterns, AnalyzeWatchPatternsInput, AnalyzeWatchPatternsOutput } from "@/ai/flows/analyze-watch-patterns";
 import { generateGroupCompromiseRecommendations, GenerateGroupCompromiseRecommendationsInput, GenerateGroupCompromiseRecommendationsOutput } from "@/ai/flows/generate-group-compromise-recommendations";
 import { generateTextQueryRecommendations, GenerateTextQueryRecommendationsInput, GenerateTextQueryRecommendationsOutput } from "@/ai/flows/generate-text-query-recommendations";
+import { generateSurpriseRecommendations, GenerateSurpriseRecommendationsInput } from "@/ai/flows/generate-surprise-recommendations";
 
 import { fetchContentDetailsFromTmdb } from "@/services/tmdbService";
 import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem, FetchGroupRecommendationsParams, UserProfileDataForGroupRecs } from "./types";
@@ -250,5 +251,51 @@ export async function fetchTextQueryRecommendationsAction(
     console.error("Error fetching text query recommendations:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return { error: `Failed to fetch text query recommendations: ${errorMessage}` };
+  }
+}
+
+interface FetchSurpriseRecommendationsParams {
+  viewingHistory: ViewingHistoryEntry[];
+  contentType: ContentType;
+}
+
+export async function fetchSurpriseRecommendationsAction(
+  params: FetchSurpriseRecommendationsParams
+): Promise<MovieRecommendationItem[] | { error: string }> {
+  try {
+    const viewingHistorySummary = params.viewingHistory.length > 0
+      ? `User has watched: ${params.viewingHistory.map(m =>
+          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''})`
+        ).join(', ')}.`
+      : "User has no viewing history yet.";
+
+    const input: GenerateSurpriseRecommendationsInput = {
+      viewingHistory: viewingHistorySummary,
+      contentType: params.contentType,
+    };
+
+    const recommendationsFromAI = await generateSurpriseRecommendations(input);
+
+    if (!recommendationsFromAI) {
+      return [];
+    }
+
+    const recommendationsWithDetails: MovieRecommendationItem[] = await Promise.all(
+      recommendationsFromAI.map(async (rec) => {
+        const tmdbDetails = await fetchContentDetailsFromTmdb(rec.title, params.contentType);
+        return {
+          ...rec,
+          posterUrl: tmdbDetails.posterUrl,
+          watchUrl: tmdbDetails.watchUrl,
+        };
+      })
+    );
+
+    return recommendationsWithDetails;
+
+  } catch (error) {
+    console.error("Error fetching surprise recommendations:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return { error: `Failed to fetch surprise recommendations: ${errorMessage}` };
   }
 }

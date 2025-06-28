@@ -84,7 +84,7 @@ Instructions:
     - reason: Explain WHY this item is a good match for the user's query AND how the contextual information (mood, time, history) influenced the choice, if applicable (string).
     - platform: The name of the OTT platform (string).
 
-Return a JSON array of 3-5 recommendations. Ensure the entire output is a valid JSON array.
+Return a JSON array of 6 recommendations. Ensure the entire output is a valid JSON array.
 Example of a single item if user query was "movie about a mouse", mood "Happy", time "Evening":
 {
   "title": "Stuart Little",

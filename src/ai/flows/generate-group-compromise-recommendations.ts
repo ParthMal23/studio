@@ -55,7 +55,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateGroupCompromiseRecommendationsInputSchema},
   output: {schema: GenerateGroupCompromiseRecommendationsOutputSchema},
   prompt: `You are an expert in recommending movies and TV series for groups. Two users did not have any overlapping recommendations based on their individual top preferences, or you are supplementing their common picks.
-Your task is to suggest 3-4 {{{targetContentType}}} that could be a good compromise or appeal to shared broader tastes.
+Your task is to suggest 6 {{{targetContentType}}} that could be a good compromise or appeal to shared broader tastes.
 
 First User Profile: {{{user1ProfileSummary}}}
 Second User Profile: {{{user2ProfileSummary}}}
