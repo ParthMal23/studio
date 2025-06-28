@@ -10,13 +10,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, SmilePlus, ShieldQuestion, Clock, Coffee, Compass, Heart } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Drama, ShieldQuestion, Clock, Coffee, Compass, Heart } from 'lucide-react';
 import Papa from 'papaparse';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
   { value: "Sad", label: "Sad", icon: Frown },
-  { value: "Goofy", label: "Goofy", icon: SmilePlus },
+  { value: "Goofy", label: "Goofy", icon: Drama },
   { value: "Excited", label: "Excited", icon: Zap },
   { value: "Relaxed", label: "Relaxed", icon: Coffee },
   { value: "Adventurous", label: "Adventurous", icon: Compass },

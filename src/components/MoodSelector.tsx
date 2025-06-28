@@ -5,12 +5,12 @@ import type { Mood } from '@/lib/types';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Frown, Meh, Zap, SmilePlus, ShieldQuestion, Coffee, Compass, Heart } from 'lucide-react';
+import { Smile, Frown, Meh, Zap, Drama, ShieldQuestion, Coffee, Compass, Heart } from 'lucide-react';
 
 const moods: { value: Mood; label: string; icon: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
   { value: "Sad", label: "Sad", icon: Frown },
-  { value: "Goofy", label: "Goofy", icon: SmilePlus },
+  { value: "Goofy", label: "Goofy", icon: Drama },
   { value: "Excited", label: "Excited", icon: Zap },
   { value: "Relaxed", label: "Relaxed", icon: Coffee },
   { value: "Adventurous", label: "Adventurous", icon: Compass },
