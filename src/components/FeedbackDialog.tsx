@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Star, Clock, Feather, Compass, BrainCircuit } from 'lucide-react';
+import { Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Star, Clock, Feather, Compass, Heart } from 'lucide-react';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
@@ -18,7 +18,7 @@ const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType 
   { value: "Excited", label: "Excited", icon: Zap },
   { value: "Calm", label: "Calm", icon: Feather },
   { value: "Adventurous", label: "Adventurous", icon: Compass },
-  { value: "Focused", label: "Focused", icon: BrainCircuit },
+  { value: "Romantic", label: "Romantic", icon: Heart },
   { value: "Neutral", label: "Neutral", icon: Meh },
 ];
 
@@ -144,5 +144,3 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
     </Dialog>
   );
 }
-
-    

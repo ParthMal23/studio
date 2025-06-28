@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Clock, Feather, Compass, BrainCircuit } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Clock, Feather, Compass, Heart } from 'lucide-react';
 import Papa from 'papaparse';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
@@ -20,7 +20,7 @@ const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType 
   { value: "Excited", label: "Excited", icon: Zap },
   { value: "Calm", label: "Calm", icon: Feather },
   { value: "Adventurous", label: "Adventurous", icon: Compass },
-  { value: "Focused", label: "Focused", icon: BrainCircuit },
+  { value: "Romantic", label: "Romantic", icon: Heart },
   { value: "Neutral", label: "Neutral", icon: Meh },
 ];
 
