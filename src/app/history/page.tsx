@@ -96,8 +96,8 @@ export default function HistoryPage() {
           {analysisResult && (
             <Card className="shadow-lg animate-fade-in-up">
               <CardHeader>
-                <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-                <Lightbulb className="h-6 w-6 text-accent" /> Watch Pattern Insights
+                <CardTitle className="font-headline text-xl text-accent flex items-center gap-2">
+                <Lightbulb className="h-6 w-6 text-primary" /> Watch Pattern Insights
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">

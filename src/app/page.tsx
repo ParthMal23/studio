@@ -186,8 +186,8 @@ export default function HomePage() {
       <AppHeader />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
         <div className="mb-8 p-6 bg-card shadow-lg rounded-lg border">
-          <h2 className="text-2xl font-headline font-semibold mb-4 text-primary flex items-center gap-2">
-            <SearchIcon className="h-7 w-7 text-accent" /> Find Something Specific?
+          <h2 className="text-2xl font-headline font-semibold mb-4 text-accent flex items-center gap-2">
+            <SearchIcon className="h-7 w-7 text-primary" /> Find Something Specific?
           </h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
@@ -196,7 +196,7 @@ export default function HomePage() {
               className="flex-grow text-base"
               onKeyPress={(e) => { if (e.key === 'Enter') handleGetTextQueryRecommendations(); }}
             />
-            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6 bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6" variant="secondary">
               {isLoadingSearchRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <SearchIcon className="mr-2 h-5 w-5" />}
               Search
             </Button>
@@ -210,11 +210,11 @@ export default function HomePage() {
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
             <div className="flex flex-col sm:flex-row gap-2">
-               <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 bg-primary hover:bg-primary/90 flex-1">
+               <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 flex-1">
                 {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
                 Get My Recommendations
               </Button>
-              <Button onClick={handleGetSurpriseRecommendations} disabled={isLoadingSurprise} className="w-full text-lg py-6 bg-purple-600 hover:bg-purple-700 text-white flex-1">
+              <Button onClick={handleGetSurpriseRecommendations} disabled={isLoadingSurprise} className="w-full text-lg py-6 flex-1" variant="secondary">
                 {isLoadingSurprise ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Gift className="mr-2 h-5 w-5" />}
                 Surprise Me!
               </Button>

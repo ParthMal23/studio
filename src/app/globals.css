@@ -50,35 +50,35 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .dark {
-    /* Define dark mode colors if needed, for now focus on light mode as per proposal */
-    --background: 0 0% 10%; /* Dark background */
-    --foreground: 0 0% 95%; /* Light foreground */
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 231 48% 55%; /* Slightly lighter primary for dark mode */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 45 100% 55%; /* Slightly lighter accent for dark mode */
-    --accent-foreground: 0 0% 10%;
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 231 48% 55%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 223 39% 18%;
+    --card-foreground: 210 40% 98%;
+    --popover: 223 39% 18%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 187 71% 55%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 223 39% 25%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 39% 22%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 216 84% 78%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 223 39% 28%;
+    --input: 223 39% 28%;
+    --ring: 187 71% 55%;
+    --radius: 0.5rem;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 231 48% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 45 100% 55%;
+    --sidebar-primary: 187 71% 55%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 216 84% 78%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 231 48% 55%;
+    --sidebar-ring: 187 71% 55%;
   }
 }
 

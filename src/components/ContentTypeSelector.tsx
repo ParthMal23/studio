@@ -22,8 +22,8 @@ export function ContentTypeSelector({ selectedContentType, onContentTypeChange }
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-          <ListVideo className="h-6 w-6" /> What are you in the mood for?
+        <CardTitle className="font-headline text-xl text-accent flex items-center gap-2">
+          <ListVideo className="h-6 w-6 text-primary" /> What are you in the mood for?
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -40,7 +40,7 @@ export function ContentTypeSelector({ selectedContentType, onContentTypeChange }
                 'flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors',
                 selectedContentType === type.value
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
-                  : 'border-border bg-background hover:bg-accent hover:text-accent-foreground'
+                  : 'border-border bg-muted hover:bg-secondary'
               )}
             >
               <RadioGroupItem value={type.value} id={`content-type-${type.value}`} className="sr-only" />

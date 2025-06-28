@@ -38,8 +38,8 @@ export function MovieRecommendations({
   if (isLoading) {
     return (
       <div className="mt-8">
-        <h2 className="text-2xl font-headline font-semibold mb-6 text-primary flex items-center gap-2">
-          <IconComponent className="h-7 w-7 animate-pulse-soft" /> Conjuring Recommendations...
+        <h2 className="text-2xl font-headline font-semibold mb-6 text-accent flex items-center gap-2">
+          <IconComponent className="h-7 w-7 animate-pulse-soft text-primary" /> Conjuring Recommendations...
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -77,8 +77,8 @@ export function MovieRecommendations({
   return (
     <div className="mt-8">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-headline font-semibold text-primary flex items-center gap-2">
-          <IconComponent className="h-7 w-7 text-accent" /> {title}
+        <h2 className="text-2xl font-headline font-semibold text-accent flex items-center gap-2">
+          <IconComponent className="h-7 w-7 text-primary" /> {title}
         </h2>
         {onRefresh && currentRecommendations.length > 0 && (
             <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>

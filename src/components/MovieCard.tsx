@@ -88,7 +88,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-start mb-1">
-          <CardTitle className="font-headline text-xl text-primary">{movie.title}</CardTitle>
+          <CardTitle className="font-headline text-xl text-foreground">{movie.title}</CardTitle>
           <Badge variant="secondary" className="whitespace-nowrap ml-2 shrink-0">
             {movie.platform}
           </Badge>
@@ -99,7 +99,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
       </CardContent>
       <CardFooter className="p-4 bg-secondary/50 border-t">
         <div className="flex items-start space-x-2 text-sm text-muted-foreground">
-          <Info className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <p className="font-body"><span className="font-semibold text-foreground/90">Why this?</span> {movie.reason}</p>
         </div>
       </CardFooter>

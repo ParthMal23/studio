@@ -136,8 +136,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-            <History className="h-6 w-6" /> Your Viewing History
+          <CardTitle className="font-headline text-xl text-accent flex items-center gap-2">
+            <History className="h-6 w-6 text-primary" /> Your Viewing History
           </CardTitle>
           <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.</CardDescription>
         </CardHeader>
@@ -210,10 +210,10 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
             <Label htmlFor="item-completed">Completed?</Label>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={handleAddMovie} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button onClick={handleAddMovie} className="flex-1">
               <ListChecks className="mr-2 h-4 w-4" /> Add Manually
             </Button>
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1">
+            <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="flex-1">
               <Upload className="mr-2 h-4 w-4" /> Upload Watch History
             </Button>
             <input

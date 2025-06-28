@@ -139,7 +139,7 @@ export default function GroupPage() {
       <main className="container mx-auto p-4 md:p-8 flex-grow flex flex-col items-center">
         <Card className="w-full max-w-lg shadow-lg">
           <CardHeader className="text-center items-center">
-            <CardTitle className="text-2xl font-headline flex items-center justify-center gap-2">
+            <CardTitle className="text-2xl font-headline flex items-center justify-center gap-2 text-accent">
               <Users className="h-7 w-7 text-primary" />
               Watch With a Friend
             </CardTitle>
