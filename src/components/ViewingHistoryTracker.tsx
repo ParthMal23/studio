@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { ViewingHistoryEntry, Mood, TimeOfDay } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Drama, ShieldQuestion, Clock, Coffee, Compass, Heart } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Drama, Clock, Coffee, Compass, Heart, Sun, CloudSun, CloudMoon, Moon } from 'lucide-react';
 import Papa from 'papaparse';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
@@ -23,6 +23,14 @@ const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType 
   { value: "Romantic", label: "Romantic", icon: Heart },
   { value: "Neutral", label: "Neutral", icon: Meh },
 ];
+
+const timeOfDayOptions: { value: TimeOfDay; label: string, icon: React.ElementType }[] = [
+    { value: "Morning", label: "Morning", icon: Sun },
+    { value: "Afternoon", label: "Afternoon", icon: CloudSun },
+    { value: "Evening", label: "Evening", icon: CloudMoon },
+    { value: "Night", label: "Night", icon: Moon },
+];
+
 
 interface ViewingHistoryTrackerProps {
   viewingHistory: ViewingHistoryEntry[];
@@ -37,9 +45,18 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
   const [newMovieTitle, setNewMovieTitle] = useState('');
   const [newMovieRating, setNewMovieRating] = useState(3);
   const [newMovieCompleted, setNewMovieCompleted] = useState(true);
-  const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(undefined);
+  const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(currentMood);
+  const [newMovieTimeOfDayAtWatch, setNewMovieTimeOfDayAtWatch] = useState<TimeOfDay | undefined>(currentTime);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setNewMovieMoodAtWatch(currentMood);
+  }, [currentMood]);
+
+  useEffect(() => {
+    setNewMovieTimeOfDayAtWatch(currentTime);
+  }, [currentTime]);
 
   const handleAddMovie = () => {
     if (!newMovieTitle.trim()) {
@@ -52,13 +69,14 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       rating: newMovieRating,
       completed: newMovieCompleted,
       moodAtWatch: newMovieMoodAtWatch,
-      timeOfDayAtWatch: currentTime,
+      timeOfDayAtWatch: newMovieTimeOfDayAtWatch,
     };
     onHistoryChange([...viewingHistory, newEntry]);
     setNewMovieTitle('');
     setNewMovieRating(3);
     setNewMovieCompleted(true);
-    setNewMovieMoodAtWatch(undefined);
+    setNewMovieMoodAtWatch(currentMood);
+    setNewMovieTimeOfDayAtWatch(currentTime);
     toast({ title: "History Updated", description: `${newMovieTitle} added to your viewing history.` });
   };
 
@@ -121,9 +139,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
           <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
             <History className="h-6 w-6" /> Your Viewing History
           </CardTitle>
-          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.
-            {currentTime && <span className="block text-xs mt-1">Items added manually will note time as <Clock className="inline h-3 w-3 mr-0.5" /> {currentTime}.</span>}
-          </CardDescription>
+          <CardDescription>Track content you've watched to improve recommendations. Add manually or import a CSV.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -135,7 +151,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               placeholder="e.g., The Grand Adventure"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="item-rating">Rating (1-5)</Label>
               <Input
@@ -148,8 +164,8 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               />
             </div>
             <div>
-              <Label htmlFor="item-mood-at-watch">Mood When Watched (Optional)</Label>
-              <Select value={newMovieMoodAtWatch} onValueChange={(value) => setNewMovieMoodAtWatch(value as Mood)}>
+              <Label htmlFor="item-mood-at-watch">Mood When Watched</Label>
+              <Select value={newMovieMoodAtWatch} onValueChange={(value) => setNewMovieMoodAtWatch(value === "undefined" ? undefined : value as Mood)}>
                 <SelectTrigger id="item-mood-at-watch">
                   <SelectValue placeholder="Select mood" />
                 </SelectTrigger>
@@ -160,6 +176,24 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                       <div className="flex items-center gap-2">
                         {mood.icon && <mood.icon className="h-4 w-4 text-muted-foreground" />}
                         {mood.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="item-time-at-watch">Time When Watched</Label>
+               <Select value={newMovieTimeOfDayAtWatch} onValueChange={(value) => setNewMovieTimeOfDayAtWatch(value as TimeOfDay)}>
+                <SelectTrigger id="item-time-at-watch">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOfDayOptions.map((time) => (
+                    <SelectItem key={time.value} value={time.value}>
+                      <div className="flex items-center gap-2">
+                        {time.icon && <time.icon className="h-4 w-4 text-muted-foreground" />}
+                        {time.label}
                       </div>
                     </SelectItem>
                   ))}
