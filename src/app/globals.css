@@ -39,6 +39,8 @@ h1, h2, h3, h4, h5, h6 {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --surprise: 255 85% 65%;
+    --surprise-foreground: 0 0% 98%;
 
     /* Sidebar specific colors (can keep default or adjust if sidebar is used extensively) */
     --sidebar-background: 0 0% 98%;
@@ -74,6 +76,8 @@ h1, h2, h3, h4, h5, h6 {
     --input: 223 39% 28%;
     --ring: 187 71% 55%;
     --radius: 0.5rem;
+    --surprise: 255 85% 65%;
+    --surprise-foreground: 0 0% 98%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
