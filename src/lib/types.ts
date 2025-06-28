@@ -1,5 +1,5 @@
 
-export type Mood = "Happy" | "Sad" | "Relaxed" | "Excited" | "Calm" | "Adventurous" | "Romantic" | "Neutral";
+export type Mood = "Happy" | "Sad" | "Goofy" | "Excited" | "Calm" | "Adventurous" | "Romantic" | "Neutral";
 
 export type TimeOfDay = "Morning" | "Afternoon" | "Evening" | "Night";
 
