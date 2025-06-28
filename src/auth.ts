@@ -1,8 +1,7 @@
+
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from 'bcryptjs'
-import dbConnect from "@/lib/mongodb"
-import User from "@/models/User"
 import type { User as NextAuthUser } from 'next-auth';
 
 declare module 'next-auth' {
@@ -22,6 +21,10 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        // Dynamically import models and db connection only within the Node.js runtime
+        const dbConnect = (await import("@/lib/mongodb")).default;
+        const User = (await import("@/models/User")).default;
+
         if (!credentials?.email || !credentials.password) {
           return null;
         }
@@ -40,6 +43,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
         );
 
         if (isPasswordCorrect) {
+          // The user object returned here will be passed to the `jwt` and `session` callbacks.
           return { id: user._id.toString(), name: user.name, email: user.email };
         }
 
