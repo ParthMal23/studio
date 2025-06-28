@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { TimeOfDay } from '@/lib/types';
@@ -6,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Sun, CloudSun, CloudMoon, Moon, Loader2 } from 'lucide-react';
+import { Sun, CloudSun, CloudMoon, Moon, Loader2, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
 
@@ -54,7 +53,8 @@ export function TimeSelector({ currentTime, onTimeChange, isAuto, onToggleAuto }
   return (
     <Card className="shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="font-headline text-xl text-primary">
+        <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
+          <Clock className="h-6 w-6" />
           Time of Day
         </CardTitle>
         <div className="flex items-center space-x-2">
