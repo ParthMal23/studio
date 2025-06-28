@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from './ThemeToggle';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -42,8 +43,9 @@ export function AppHeader() {
           </nav>
         </div>
 
-        {/* Right side: Desktop Logout Button */}
-        <div className="hidden md:flex items-center">
+        {/* Right side: Desktop Logout Button + Theme Toggle */}
+        <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             <Button asChild variant="ghost" size="sm" className="hover:bg-accent/20">
                <Link href="/select-user">
                    <LogOut className="mr-2 h-4 w-4" />
