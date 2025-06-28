@@ -13,8 +13,6 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCardProps) {
-  const animationDelay = `${index * 100}ms`;
-
   const handleCardInteraction = () => {
     if (typeof window !== 'undefined' && currentUserId) {
       try {
@@ -53,8 +51,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
 
   return (
     <Card
-      className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out animate-fade-in-up bg-card cursor-pointer hover:scale-105"
-      style={{ animationDelay }}
+      className="h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card cursor-pointer hover:scale-105 transform-gpu"
       onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"

@@ -89,13 +89,17 @@ export function MovieRecommendations({
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentRecommendations.map((movie, index) => (
-          <MovieCard
-            key={`${movie.title}-${index}-${currentUserId}`} 
-            movie={movie}
-            index={index}
-            onCardClick={onCardClick}
-            currentUserId={currentUserId}
-          />
+          <div 
+              key={`${movie.title}-${index}-${currentUserId}`} 
+              className="animate-fade-in-up" 
+              style={{ animationDelay: `${index * 100}ms` }}>
+            <MovieCard
+              movie={movie}
+              index={index}
+              onCardClick={onCardClick}
+              currentUserId={currentUserId}
+            />
+          </div>
         ))}
       </div>
     </div>
