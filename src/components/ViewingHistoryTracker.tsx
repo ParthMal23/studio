@@ -2,16 +2,15 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood, TimeOfDay } from '@/lib/types';
+import type { ViewingHistoryEntry, Mood, TimeOfDay } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { History, ListChecks, Star, Activity, Trash2, Loader2, Lightbulb, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Clock } from 'lucide-react';
+import { History, ListChecks, Star, Activity, Trash2, Loader2, Upload, Smile, Frown, Meh, Zap, Coffee, ShieldQuestion, Clock } from 'lucide-react';
 import Papa from 'papaparse';
 
 const moodsForSelection: { value: Mood; label: string; icon?: React.ElementType }[] = [
@@ -29,16 +28,15 @@ interface ViewingHistoryTrackerProps {
   onHistoryChange: (history: ViewingHistoryEntry[]) => void;
   currentMood: Mood;
   currentTime: TimeOfDay | undefined;
+  onAnalyze: () => void;
+  isAnalyzing: boolean;
 }
 
-export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, currentMood, currentTime }: ViewingHistoryTrackerProps) {
+export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, currentMood, currentTime, onAnalyze, isAnalyzing }: ViewingHistoryTrackerProps) {
   const [newMovieTitle, setNewMovieTitle] = useState('');
   const [newMovieRating, setNewMovieRating] = useState(3);
   const [newMovieCompleted, setNewMovieCompleted] = useState(true);
   const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(undefined);
-  // Time of day for manual add will use the `currentTime` prop
-  const [analysisResult, setAnalysisResult] = useState<WatchPatternAnalysis | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +51,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       rating: newMovieRating,
       completed: newMovieCompleted,
       moodAtWatch: newMovieMoodAtWatch,
-      timeOfDayAtWatch: currentTime, // Add current time of day
+      timeOfDayAtWatch: currentTime,
     };
     onHistoryChange([...viewingHistory, newEntry]);
     setNewMovieTitle('');
@@ -66,23 +64,6 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
   const handleRemoveMovie = (id: string) => {
     onHistoryChange(viewingHistory.filter(movie => movie.id !== id));
     toast({ title: "History Updated", description: `Item removed from your viewing history.` });
-  };
-
-  const handleAnalyzePatterns = async () => {
-    if (!currentTime) {
-      toast({ title: "Error", description: "Current time not available for analysis.", variant: "destructive" });
-      return;
-    }
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
-    const result = await analyzeWatchPatternsAction({ viewingHistory, currentMood, currentTime });
-    setIsAnalyzing(false);
-    if ('error' in result) {
-      toast({ title: "Analysis Failed", description: result.error, variant: "destructive" });
-    } else {
-      setAnalysisResult(result);
-      toast({ title: "Analysis Complete", description: "Watch patterns analyzed successfully." });
-    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +85,6 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
         results.data.forEach((row, index) => {
           const title = row['Title'] || row['title'];
           if (title) {
-            // CSV imports won't have mood or time of day at watch initially
             newEntries.push({
               id: `${Date.now()}-${index}`,
               title: title.trim(),
@@ -238,39 +218,11 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
             </ul>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleAnalyzePatterns} disabled={isAnalyzing || viewingHistory.length === 0} className="w-full">
+            <Button onClick={onAnalyze} disabled={isAnalyzing || viewingHistory.length === 0} className="w-full">
               {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
               Analyze Watch Patterns
             </Button>
           </CardFooter>
-        </Card>
-      )}
-
-      {analysisResult && (
-        <Card className="shadow-lg animate-fade-in-up">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-             <Lightbulb className="h-6 w-6 text-accent" /> Watch Pattern Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {analysisResult.explanation && <p><span className="font-semibold">Explanation:</span> {analysisResult.explanation}</p>}
-            {analysisResult.moodWeight !== undefined && <p><span className="font-semibold">Suggested Mood Weight:</span> {analysisResult.moodWeight}%</p>}
-            {analysisResult.historyWeight !== undefined && <p><span className="font-semibold">Suggested History Weight:</span> {analysisResult.historyWeight}%</p>}
-            {analysisResult.contentMix && analysisResult.contentMix.length > 0 && (
-              <div>
-                <p className="font-semibold">Suggested Content Mix:</p>
-                <ul className="list-disc list-inside ml-4">
-                  {analysisResult.contentMix.map((item) => (
-                    <li key={item.genre}>{item.genre}: {(item.proportion * 100).toFixed(0)}%</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-             {analysisResult.contentMix && analysisResult.contentMix.length === 0 && (
-                <p><span className="font-semibold">Suggested Content Mix:</span> No specific mix suggested.</p>
-            )}
-          </CardContent>
         </Card>
       )}
     </div>
