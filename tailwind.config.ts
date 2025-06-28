@@ -41,9 +41,19 @@ export default {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
         },
+        'accent-hover': 'hsl(var(--accent-hover))',
+        'accent-hover-foreground': 'hsl(var(--accent-hover-foreground))',
+        'accent-soft': {
+          DEFAULT: 'hsl(var(--accent-soft))',
+          foreground: 'hsl(var(--accent-soft-foreground))',
+        },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        surprise: {
+          DEFAULT: 'hsl(var(--surprise))',
+          foreground: 'hsl(var(--surprise-foreground))',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

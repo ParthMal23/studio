@@ -19,8 +19,8 @@ export function WeightCustomizer({ weights, onWeightsChange }: WeightCustomizerP
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-xl text-primary flex items-center gap-2">
-          <SlidersHorizontal className="h-6 w-6" /> Customize Your Preferences
+        <CardTitle className="font-headline text-xl text-accent flex items-center gap-2">
+          <SlidersHorizontal className="h-6 w-6 text-primary" /> Customize Your Preferences
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -33,7 +33,6 @@ export function WeightCustomizer({ weights, onWeightsChange }: WeightCustomizerP
             step={5}
             value={[weights.mood]}
             onValueChange={(value) => handleSliderChange('mood', value)}
-            className="[&>span:first-child]:h-3 [&>span>span]:bg-primary [&>span>span]:h-3 [&>span>button]:bg-background [&>span>button]:border-2 [&>span>button]:border-primary"
           />
         </div>
         <div>
@@ -45,7 +44,6 @@ export function WeightCustomizer({ weights, onWeightsChange }: WeightCustomizerP
             step={5}
             value={[weights.time]}
             onValueChange={(value) => handleSliderChange('time', value)}
-            className="[&>span:first-child]:h-3 [&>span>span]:bg-primary [&>span>span]:h-3 [&>span>button]:bg-background [&>span>button]:border-2 [&>span>button]:border-primary"
           />
         </div>
         <div>
@@ -57,7 +55,6 @@ export function WeightCustomizer({ weights, onWeightsChange }: WeightCustomizerP
             step={5}
             value={[weights.history]}
             onValueChange={(value) => handleSliderChange('history', value)}
-            className="[&>span:first-child]:h-3 [&>span>span]:bg-primary [&>span>span]:h-3 [&>span>button]:bg-background [&>span>button]:border-2 [&>span>button]:border-primary"
           />
         </div>
         <p className="text-sm text-muted-foreground">

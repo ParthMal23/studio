@@ -11,6 +11,7 @@ import { TimeSelector } from '@/components/TimeSelector';
 import { ContentTypeSelector } from '@/components/ContentTypeSelector';
 import { WeightCustomizer } from '@/components/WeightCustomizer';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,15 @@ import { RefreshCw, Loader2, Search as SearchIcon, Zap, Gift } from 'lucide-reac
 const USER_ID_KEY = 'selectedUserId';
 const PREFERENCES_KEY_PREFIX = 'userPreferences_';
 const HISTORY_KEY_PREFIX = 'viewingHistory_';
+
+// This type is needed for the feedback dialog
+type PendingFeedbackStorageItem = {
+  title: string;
+  platform: string;
+  description?: string;
+  reason?: string;
+  posterUrl?: string;
+};
 
 export default function HomePage() {
   const router = useRouter();
@@ -45,6 +55,10 @@ export default function HomePage() {
   const [surpriseError, setSurpriseError] = useState<string | null>(null);
 
   const [activeRecommendationType, setActiveRecommendationType] = useState<null | 'personal' | 'search' | 'surprise'>(null);
+
+  // New state for the feedback dialog
+  const [pendingFeedbackItem, setPendingFeedbackItem] = useState<PendingFeedbackStorageItem | null>(null);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
   const { toast } = useToast();
   
@@ -75,6 +89,37 @@ export default function HomePage() {
       }
     }
   }, [router]);
+  
+  // useEffect to check sessionStorage for pending feedback
+  useEffect(() => {
+    if (currentUserId) {
+        const checkSessionStorageForFeedback = () => {
+            const SS_PENDING_FEEDBACK_KEY = `pendingFeedbackItem_${currentUserId}`;
+            try {
+                const storedItem = sessionStorage.getItem(SS_PENDING_FEEDBACK_KEY);
+                if (storedItem) {
+                    const item: PendingFeedbackStorageItem = JSON.parse(storedItem);
+                    setPendingFeedbackItem(item);
+                    setIsFeedbackDialogOpen(true);
+                    sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY);
+                }
+            } catch (e) {
+                console.error("Failed to parse pending feedback item from sessionStorage", e);
+                // Clear potentially corrupted item
+                sessionStorage.removeItem(SS_PENDING_FEEDBACK_KEY);
+            }
+        };
+
+        checkSessionStorageForFeedback(); // Check once on mount after userId is set
+        
+        // Also check when the user returns to the tab
+        window.addEventListener('focus', checkSessionStorageForFeedback);
+
+        return () => {
+            window.removeEventListener('focus', checkSessionStorageForFeedback);
+        };
+    }
+  }, [currentUserId]);
 
   useEffect(() => {
     if (currentUserId) {
@@ -170,6 +215,20 @@ export default function HomePage() {
     setActiveRecommendationType('surprise');
   }, [viewingHistory, contentType, toast, currentUserId]);
 
+  // New handler for submitting feedback from the dialog
+  const handleFeedbackSubmit = (feedback: Omit<ViewingHistoryEntry, 'id'>) => {
+    const newHistoryEntry: ViewingHistoryEntry = {
+        ...feedback,
+        id: Date.now().toString(),
+    };
+    setViewingHistory(prev => [...prev, newHistoryEntry]);
+    setIsFeedbackDialogOpen(false);
+    setPendingFeedbackItem(null);
+    toast({
+        title: "History Updated!",
+        description: `${feedback.title} has been added to your viewing history.`,
+    });
+  };
 
   const handleCardClick = (movie: MovieRecommendationItem) => {};
   
@@ -186,8 +245,8 @@ export default function HomePage() {
       <AppHeader />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
         <div className="mb-8 p-6 bg-card shadow-lg rounded-lg border">
-          <h2 className="text-2xl font-headline font-semibold mb-4 text-primary flex items-center gap-2">
-            <SearchIcon className="h-7 w-7 text-accent" /> Find Something Specific?
+          <h2 className="text-2xl font-headline font-semibold mb-4 text-accent flex items-center gap-2">
+            <SearchIcon className="h-7 w-7 text-primary" /> Find Something Specific?
           </h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
@@ -196,7 +255,7 @@ export default function HomePage() {
               className="flex-grow text-base"
               onKeyPress={(e) => { if (e.key === 'Enter') handleGetTextQueryRecommendations(); }}
             />
-            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6 bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button onClick={handleGetTextQueryRecommendations} disabled={isLoadingSearchRecommendations || !timeOfDay || !searchQuery.trim()} className="text-md py-2.5 px-6 bg-accent-hover text-accent-hover-foreground hover:bg-accent-hover/90">
               {isLoadingSearchRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <SearchIcon className="mr-2 h-5 w-5" />}
               Search
             </Button>
@@ -210,11 +269,11 @@ export default function HomePage() {
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
             <div className="flex flex-col sm:flex-row gap-2">
-               <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 bg-primary hover:bg-primary/90 flex-1">
+               <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 flex-1">
                 {isLoadingRecommendations ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
                 Get My Recommendations
               </Button>
-              <Button onClick={handleGetSurpriseRecommendations} disabled={isLoadingSurprise} className="w-full text-lg py-6 bg-purple-600 hover:bg-purple-700 text-white flex-1">
+              <Button onClick={handleGetSurpriseRecommendations} disabled={isLoadingSurprise} className="w-full text-lg py-6 flex-1" variant="surprise">
                 {isLoadingSurprise ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Gift className="mr-2 h-5 w-5" />}
                 Surprise Me!
               </Button>
@@ -266,6 +325,14 @@ export default function HomePage() {
       <footer className="text-center p-4 text-sm text-muted-foreground border-t mt-8">
         FireSync &copy; {new Date().getFullYear()} - Your Personal Content Guide
       </footer>
+      <FeedbackDialog
+        isOpen={isFeedbackDialogOpen}
+        onClose={() => setIsFeedbackDialogOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+        movieItem={pendingFeedbackItem}
+        currentTimeOfDayAtWatch={timeOfDay}
+        initialMoodAtWatch={mood}
+      />
     </div>
   );
 }
