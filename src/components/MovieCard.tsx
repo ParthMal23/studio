@@ -51,7 +51,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
 
   return (
     <Card
-      className="h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card cursor-pointer hover:scale-105 transform-gpu hover:border-primary"
+      className="h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card cursor-pointer hover:scale-105 transform-gpu hover:border-primary hover:bg-accent-hover/20"
       onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"
