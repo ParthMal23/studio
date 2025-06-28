@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Mood } from '@/lib/types';
@@ -6,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Smile, Frown, Meh, Zap, Drama, ShieldQuestion, Coffee, Compass, Heart } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const moods: { value: Mood; label: string; icon: React.ElementType }[] = [
   { value: "Happy", label: "Happy", icon: Smile },
@@ -41,13 +41,16 @@ export function MoodSelector({ selectedMood, onMoodChange }: MoodSelectorProps) 
             <Label
               key={mood.value}
               htmlFor={`mood-${mood.value}`}
-              className={`flex flex-col items-center justify-center p-4 border rounded-lg cursor-pointer transition-all duration-200 ease-in-out hover:shadow-md hover:border-primary ${
-                selectedMood === mood.value ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border'
-              }`}
+              className={cn(
+                'flex flex-col items-center justify-center p-4 border rounded-lg cursor-pointer transition-colors',
+                selectedMood === mood.value
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
+                  : 'border-border bg-background hover:bg-accent hover:text-accent-foreground'
+              )}
             >
               <RadioGroupItem value={mood.value} id={`mood-${mood.value}`} className="sr-only" />
-              <mood.icon className={`h-8 w-8 mb-2 ${selectedMood === mood.value ? 'text-primary' : 'text-foreground/70'}`} />
-              <span className={`text-sm font-medium ${selectedMood === mood.value ? 'text-primary' : 'text-foreground/90'}`}>{mood.label}</span>
+              <mood.icon className={cn('h-8 w-8 mb-2', selectedMood !== mood.value && 'text-foreground/70')} />
+              <span className="text-sm font-medium">{mood.label}</span>
             </Label>
           ))}
         </RadioGroup>

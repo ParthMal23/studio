@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film, Tv2, LibraryBig, ListVideo } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const contentTypes: { value: ContentType; label: string; icon: React.ElementType }[] = [
   { value: "MOVIES", label: "Movies", icon: Film },
@@ -35,13 +36,16 @@ export function ContentTypeSelector({ selectedContentType, onContentTypeChange }
             <Label
               key={type.value}
               htmlFor={`content-type-${type.value}`}
-              className={`flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer transition-all duration-200 ease-in-out hover:shadow-md hover:border-primary ${
-                selectedContentType === type.value ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border'
-              }`}
+              className={cn(
+                'flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors',
+                selectedContentType === type.value
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
+                  : 'border-border bg-background hover:bg-accent hover:text-accent-foreground'
+              )}
             >
               <RadioGroupItem value={type.value} id={`content-type-${type.value}`} className="sr-only" />
-              <type.icon className={`h-7 w-7 mb-1.5 ${selectedContentType === type.value ? 'text-primary' : 'text-foreground/70'}`} />
-              <span className={`text-sm font-medium ${selectedContentType === type.value ? 'text-primary' : 'text-foreground/90'}`}>{type.label}</span>
+              <type.icon className={cn('h-7 w-7 mb-1.5', selectedContentType !== type.value && 'text-foreground/70')} />
+              <span className="text-sm font-medium">{type.label}</span>
             </Label>
           ))}
         </RadioGroup>
