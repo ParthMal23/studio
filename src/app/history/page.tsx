@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import type { ViewingHistoryEntry, WatchPatternAnalysis, Mood, TimeOfDay } from '@/lib/types';
 import { analyzeWatchPatternsAction } from '@/lib/actions';
 import { AppHeader } from '@/components/AppHeader';
@@ -13,14 +13,8 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Lightbulb } from 'lucide-react';
 
-const USER_ID_STORAGE_KEY = 'selectedUserId';
-const userDisplayNames: Record<string, string> = { user1: 'Admin', user2: 'Parth' };
-
 export default function HistoryPage() {
-  const router = useRouter();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const { data: session, status } = useSession();
 
   const [viewingHistory, setViewingHistory] = useState<ViewingHistoryEntry[]>([]);
   const { timeOfDay } = useTimeOfDay();
@@ -31,48 +25,17 @@ export default function HistoryPage() {
 
   const { toast } = useToast();
   
-  const getDynamicStorageKey = useCallback((baseKey: string, userId: string | null) => {
-    return userId ? `${baseKey}_${userId}` : null;
-  }, []);
-
+  // NOTE: Viewing history is currently stored in-memory per session.
+  // Phase 2 will involve fetching/saving this data to the database.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUserId = localStorage.getItem(USER_ID_STORAGE_KEY);
-      if (storedUserId) {
-        setCurrentUserId(storedUserId);
-        setCurrentUserDisplayName(userDisplayNames[storedUserId] || storedUserId);
-      } else {
-        router.push('/select-user');
-      }
-      setIsLoadingUser(false);
+    if (status === 'authenticated') {
+      // Here you would fetch viewing history from your database for the logged-in user.
+      // e.g., fetch(`/api/history?userId=${session.user.id}`).then(...)
+      // For now, it will be empty on each page load.
+      setViewingHistory([]);
     }
-  }, [router]);
+  }, [status]);
 
-  useEffect(() => {
-    if (!currentUserId || isLoadingUser) return;
-    const LS_VIEWING_HISTORY_KEY = getDynamicStorageKey('fireSyncViewingHistory', currentUserId);
-    const LS_USER_PREFERENCES_KEY = getDynamicStorageKey('fireSyncUserPreferences', currentUserId);
-    if (!LS_VIEWING_HISTORY_KEY || !LS_USER_PREFERENCES_KEY) return;
-    
-    const storedHistory = localStorage.getItem(LS_VIEWING_HISTORY_KEY);
-    if (storedHistory) try { setViewingHistory(JSON.parse(storedHistory)); } catch (e) {}
-    
-    const storedPreferences = localStorage.getItem(LS_USER_PREFERENCES_KEY);
-    if (storedPreferences) {
-        try {
-            const prefs = JSON.parse(storedPreferences);
-            if(prefs.mood) setMood(prefs.mood);
-        } catch(e) {}
-    }
-
-  }, [currentUserId, isLoadingUser, getDynamicStorageKey]);
-
-  useEffect(() => {
-    if (!currentUserId || isLoadingUser) return;
-    const LS_VIEWING_HISTORY_KEY = getDynamicStorageKey('fireSyncViewingHistory', currentUserId);
-    if (!LS_VIEWING_HISTORY_KEY) return;
-    localStorage.setItem(LS_VIEWING_HISTORY_KEY, JSON.stringify(viewingHistory));
-  }, [currentUserId, isLoadingUser, viewingHistory, getDynamicStorageKey]);
 
   const handleAnalyzePatterns = async () => {
     if (!timeOfDay) {
@@ -90,13 +53,8 @@ export default function HistoryPage() {
       toast({ title: "Analysis Complete", description: "Watch patterns analyzed successfully." });
     }
   };
-
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') localStorage.removeItem(USER_ID_STORAGE_KEY);
-    router.push('/select-user');
-  };
-
-  if (isLoadingUser || !currentUserId || !currentUserDisplayName) {
+  
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex flex-col">
         <AppHeader />
@@ -109,7 +67,7 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <AppHeader currentUserId={currentUserDisplayName} onLogout={handleLogout} />
+      <AppHeader />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
         <div className="max-w-4xl mx-auto space-y-6">
           <ViewingHistoryTracker
