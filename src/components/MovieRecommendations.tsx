@@ -37,11 +37,11 @@ export function MovieRecommendations({
 
   if (isLoading) {
     return (
-      <div className="mt-8">
+      <div>
         <h2 className="text-2xl font-headline font-semibold mb-6 text-accent flex items-center gap-2">
           <IconComponent className="h-7 w-7 animate-pulse-soft text-primary" /> Conjuring Recommendations...
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
           {[...Array(6)].map((_, i) => (
             <CardSkeleton key={i} />
           ))}
@@ -52,7 +52,7 @@ export function MovieRecommendations({
 
   if (error) {
     return (
-      <div className="mt-8 p-6 bg-destructive/10 border border-destructive text-destructive rounded-lg flex items-center gap-3">
+      <div className="p-6 bg-destructive/10 border border-destructive text-destructive rounded-lg flex items-center gap-3">
         <AlertTriangle className="h-8 w-8" />
         <div>
           <h3 className="font-semibold text-lg">Oops! Something went wrong.</h3>
@@ -66,7 +66,7 @@ export function MovieRecommendations({
     // Use a more generic empty state heading for group recommendations now that there's a fallback
     const emptyStateHeading = title.toLowerCase().includes("group") ? "No Group Picks Found" : "No recommendations yet.";
     return (
-      <div className="mt-8 text-center py-10">
+      <div className="text-center py-10">
         <IconComponent className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-xl font-headline font-semibold text-muted-foreground">{emptyStateHeading}</h2>
         <p className="text-muted-foreground">{emptyStateMessage}</p>
@@ -75,7 +75,7 @@ export function MovieRecommendations({
   }
 
   return (
-    <div className="mt-8">
+    <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-headline font-semibold text-accent flex items-center gap-2">
           <IconComponent className="h-7 w-7 text-primary" /> {title}
@@ -87,7 +87,7 @@ export function MovieRecommendations({
             </Button>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {currentRecommendations.map((movie, index) => (
           <div 
               key={`${movie.title}-${index}-${currentUserId}`} 
