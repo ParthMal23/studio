@@ -37,10 +37,13 @@ const GenerateTextQueryRecommendationsInputSchema = z.object({
     .describe('The current time of day (e.g., morning, afternoon, evening, night).'),
   viewingHistory: z
     .string()
-    .describe('A summary of the user\'s historical viewing data. This may include titles, ratings, completion status, and mood at watch.'),
+    .describe('A summary of the user\'s historical viewing data. This may include titles, ratings, completion status, and mood, time, or language at watch.'),
   contentType: z
     .enum(["MOVIES", "TV_SERIES", "BOTH"])
     .describe('The type of content to recommend (MOVIES, TV_SERIES, or BOTH).'),
+  language: z
+    .string()
+    .describe('The desired language for the movie or TV series (e.g., "English", "Korean"). If "Any", do not filter by language.'),
 });
 export type GenerateTextQueryRecommendationsInput = z.infer<
   typeof GenerateTextQueryRecommendationsInputSchema
@@ -62,7 +65,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateTextQueryRecommendationsInputSchema},
   output: {schema: GenerateTextQueryRecommendationsOutputSchema},
   prompt: `You are an expert movie and TV series recommender. The user has provided a specific text query for what they want to watch.
-Additionally, consider their current mood, the time of day, their viewing history, and their preferred content type to refine and personalize these recommendations.
+Additionally, consider their current mood, the time of day, their viewing history, their preferred content type, and language to refine and personalize these recommendations.
 
 User's Search Query: "{{{userQuery}}}"
 
@@ -71,17 +74,18 @@ Contextual Information:
 - Time of Day: {{{timeOfDay}}}
 - Viewing History: {{{viewingHistory}}}
 - Preferred Content Type: {{{contentType}}}
+- Preferred Language: {{{language}}}. If the language is "Any", you can recommend content from any language. Otherwise, recommendations should match the specified language.
 
 Instructions:
 1. Primarily focus on fulfilling the user's text query: "{{{userQuery}}}".
-2. Use the contextual information (mood, time, history, content type) to select the most suitable options if multiple items match the query, or to tailor the suggestions. For example, if the query is "funny movie" and mood is "Happy", lean towards upbeat comedies. If history shows enjoyment of animated films, and query is "adventure", animated adventures might be good.
+2. Use the contextual information (mood, time, history, content type, language) to select the most suitable options if multiple items match the query, or to tailor the suggestions.
 3. If '{{{contentType}}}' is 'MOVIES', recommend only movies.
 4. If '{{{contentType}}}' is 'TV_SERIES', recommend only TV series.
 5. If '{{{contentType}}}' is 'BOTH', recommend a mix of movies and TV series that match the query.
 6. For each recommendation, provide:
     - title: The title of the movie or TV series (string).
     - description: A brief description (string).
-    - reason: Explain WHY this item is a good match for the user's query AND how the contextual information (mood, time, history) influenced the choice, if applicable (string).
+    - reason: Explain WHY this item is a good match for the user's query AND how the contextual information (mood, time, history, language) influenced the choice, if applicable (string).
     - platform: The name of the OTT platform (string).
 
 Return a JSON array of 6 recommendations. Ensure the entire output is a valid JSON array.

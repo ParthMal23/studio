@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType } from '@/lib/types';
+import type { Mood, TimeOfDay, UserWeights, ViewingHistoryEntry, MovieRecommendationItem, ContentType, Language, UserPreferences } from '@/lib/types';
 import { fetchContentRecommendationsAction, fetchTextQueryRecommendationsAction, fetchSurpriseRecommendationsAction } from '@/lib/actions';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { AppHeader } from '@/components/AppHeader';
@@ -17,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Loader2, Search as SearchIcon, Zap, Gift } from 'lucide-react';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 const USER_ID_KEY = 'selectedUserId';
 const PREFERENCES_KEY_PREFIX = 'userPreferences_';
@@ -38,6 +40,7 @@ export default function HomePage() {
   const [mood, setMood] = useState<Mood>("Neutral");
   const { timeOfDay, setTimeManually, isAuto, toggleAuto } = useTimeOfDay();
   const [contentType, setContentType] = useState<ContentType>("BOTH");
+  const [language, setLanguage] = useState<Language>("Any");
   const [userWeights, setUserWeights] = useState<UserWeights>({ mood: 50, time: 25, history: 25 });
   const [viewingHistory, setViewingHistory] = useState<ViewingHistoryEntry[]>([]);
 
@@ -71,10 +74,11 @@ export default function HomePage() {
       const savedPrefs = localStorage.getItem(`${PREFERENCES_KEY_PREFIX}${userId}`);
       if (savedPrefs) {
         try {
-          const { mood, contentType, userWeights } = JSON.parse(savedPrefs);
+          const { mood, contentType, userWeights, language } = JSON.parse(savedPrefs);
           if (mood) setMood(mood);
           if (contentType) setContentType(contentType);
           if (userWeights) setUserWeights(userWeights);
+          if (language) setLanguage(language);
         } catch (e) {
             console.error("Failed to parse preferences from localStorage", e);
         }
@@ -123,10 +127,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (currentUserId) {
-      const prefsToSave = JSON.stringify({ mood, contentType, userWeights });
-      localStorage.setItem(`${PREFERENCES_KEY_PREFIX}${currentUserId}`, prefsToSave);
+      const prefsToSave: UserPreferences = { mood, contentType, userWeights, language };
+      localStorage.setItem(`${PREFERENCES_KEY_PREFIX}${currentUserId}`, JSON.stringify(prefsToSave));
     }
-  }, [mood, contentType, userWeights, currentUserId]);
+  }, [mood, contentType, userWeights, language, currentUserId]);
 
   useEffect(() => {
     if (currentUserId) {
@@ -145,7 +149,7 @@ export default function HomePage() {
     setSurpriseError(null);
     setSearchQuery('');
 
-    const result = await fetchContentRecommendationsAction({ mood, timeOfDay, viewingHistory, contentType });
+    const result = await fetchContentRecommendationsAction({ mood, timeOfDay, viewingHistory, contentType, language });
     setIsLoadingRecommendations(false);
     if ('error' in result) {
       setRecommendationError(result.error);
@@ -160,7 +164,7 @@ export default function HomePage() {
       }
     }
     setActiveRecommendationType('personal');
-  }, [mood, timeOfDay, viewingHistory, contentType, toast, currentUserId]);
+  }, [mood, timeOfDay, viewingHistory, contentType, language, toast, currentUserId]);
 
   const handleGetTextQueryRecommendations = useCallback(async () => {
     if (!searchQuery.trim() || !timeOfDay || !currentUserId) return;
@@ -172,7 +176,7 @@ export default function HomePage() {
     setSurpriseRecommendations([]);
     setSurpriseError(null);
 
-    const result = await fetchTextQueryRecommendationsAction({ searchQuery, mood, timeOfDay, viewingHistory, contentType });
+    const result = await fetchTextQueryRecommendationsAction({ searchQuery, mood, timeOfDay, viewingHistory, contentType, language });
     setIsLoadingSearchRecommendations(false);
     if ('error' in result) {
       setSearchRecommendationError(result.error);
@@ -187,7 +191,7 @@ export default function HomePage() {
       }
     }
     setActiveRecommendationType('search');
-  }, [searchQuery, mood, timeOfDay, viewingHistory, contentType, toast, currentUserId]);
+  }, [searchQuery, mood, timeOfDay, viewingHistory, contentType, language, toast, currentUserId]);
 
   const handleGetSurpriseRecommendations = useCallback(async () => {
     if (!currentUserId) return;
@@ -243,7 +247,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="container mx-auto p-4 md:p-8 flex-grow">
+      <main className="container mx-auto p-5 md:p-8 flex-grow">
         <div className="mb-8 p-6 bg-card shadow-lg rounded-lg border">
           <h2 className="text-2xl font-headline font-semibold mb-4 text-accent flex items-center gap-2">
             <SearchIcon className="h-7 w-7 text-primary" /> Find Something Specific?
@@ -267,6 +271,7 @@ export default function HomePage() {
             <MoodSelector selectedMood={mood} onMoodChange={setMood} />
             <TimeSelector currentTime={timeOfDay} onTimeChange={setTimeManually} isAuto={isAuto} onToggleAuto={toggleAuto} />
             <ContentTypeSelector selectedContentType={contentType} onContentTypeChange={setContentType} />
+            <LanguageSelector selectedLanguage={language} onLanguageChange={setLanguage} />
             <WeightCustomizer weights={userWeights} onWeightsChange={setUserWeights} />
             <div className="flex flex-col sm:flex-row gap-2">
                <Button onClick={handleGetRecommendations} disabled={isLoadingRecommendations || !timeOfDay} className="w-full text-lg py-6 flex-1">
@@ -332,6 +337,7 @@ export default function HomePage() {
         movieItem={pendingFeedbackItem}
         currentTimeOfDayAtWatch={timeOfDay}
         initialMoodAtWatch={mood}
+        initialLanguageAtWatch={language}
       />
     </div>
   );

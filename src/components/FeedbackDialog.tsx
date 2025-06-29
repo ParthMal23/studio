@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { Mood, ViewingHistoryEntry, TimeOfDay } from '@/lib/types';
+import type { Mood, ViewingHistoryEntry, TimeOfDay, Language } from '@/lib/types';
+import { LANGUAGES } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -44,12 +45,14 @@ interface FeedbackDialogProps {
   movieItem: PendingFeedbackStorageItem | null;
   currentTimeOfDayAtWatch: TimeOfDay | undefined;
   initialMoodAtWatch?: Mood;
+  initialLanguageAtWatch?: Language;
 }
 
-export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTimeOfDayAtWatch, initialMoodAtWatch }: FeedbackDialogProps) {
+export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTimeOfDayAtWatch, initialMoodAtWatch, initialLanguageAtWatch }: FeedbackDialogProps) {
   const [rating, setRating] = useState(3);
   const [moodAtWatch, setMoodAtWatch] = useState<Mood | undefined>(initialMoodAtWatch);
   const [timeOfDayAtWatch, setTimeOfDayAtWatch] = useState<TimeOfDay | undefined>(currentTimeOfDayAtWatch);
+  const [languageAtWatch, setLanguageAtWatch] = useState<string | undefined>(initialLanguageAtWatch);
   const [completed, setCompleted] = useState(true);
 
   useEffect(() => {
@@ -57,9 +60,10 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
       setRating(3);
       setMoodAtWatch(initialMoodAtWatch);
       setTimeOfDayAtWatch(currentTimeOfDayAtWatch);
+      setLanguageAtWatch(initialLanguageAtWatch);
       setCompleted(true);
     }
-  }, [isOpen, movieItem, initialMoodAtWatch, currentTimeOfDayAtWatch]);
+  }, [isOpen, movieItem, initialMoodAtWatch, currentTimeOfDayAtWatch, initialLanguageAtWatch]);
 
   if (!movieItem) return null;
 
@@ -70,6 +74,7 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
       completed: completed,
       moodAtWatch: moodAtWatch,
       timeOfDayAtWatch: timeOfDayAtWatch,
+      languageAtWatch: languageAtWatch === 'Any' ? undefined : languageAtWatch,
     });
   };
 
@@ -136,6 +141,23 @@ export function FeedbackDialog({ isOpen, onClose, onSubmit, movieItem, currentTi
                       {time.icon && <time.icon className="h-4 w-4" />}
                       {time.label}
                     </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="languageAtWatch" className="text-right col-span-1">
+              Language
+            </Label>
+            <Select value={languageAtWatch} onValueChange={(value) => setLanguageAtWatch(value)}>
+              <SelectTrigger id="languageAtWatch" className="col-span-3">
+                <SelectValue placeholder="Select language when watched" />
+              </SelectTrigger>
+              <SelectContent>
+                 {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang} value={lang}>
+                    {lang}
                   </SelectItem>
                 ))}
               </SelectContent>

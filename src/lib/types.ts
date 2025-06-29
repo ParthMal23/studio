@@ -5,6 +5,9 @@ export type TimeOfDay = "Morning" | "Afternoon" | "Evening" | "Night";
 
 export type ContentType = "MOVIES" | "TV_SERIES" | "BOTH";
 
+export const LANGUAGES = ["Any", "English", "Spanish", "French", "German", "Italian", "Hindi", "Japanese", "Korean"] as const;
+export type Language = typeof LANGUAGES[number];
+
 export interface UserWeights {
   mood: number; // 0-100
   time: number; // 0-100
@@ -17,7 +20,8 @@ export interface ViewingHistoryEntry {
   rating: number; // 1-5
   completed: boolean;
   moodAtWatch?: Mood;
-  timeOfDayAtWatch?: TimeOfDay; // Added time of day at watch
+  timeOfDayAtWatch?: TimeOfDay;
+  languageAtWatch?: string;
 }
 
 export interface MovieRecommendationItem {
@@ -44,9 +48,17 @@ export interface UserProfileDataForGroupRecs {
   viewingHistory: ViewingHistoryEntry[];
   userWeights: UserWeights;
   contentType: ContentType;
+  language: Language;
 }
 
 export interface FetchGroupRecommendationsParams {
   user1Data: UserProfileDataForGroupRecs;
   user2Data: UserProfileDataForGroupRecs;
+}
+
+export interface UserPreferences {
+    mood: Mood;
+    contentType: ContentType;
+    userWeights: UserWeights;
+    language: Language;
 }

@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { MovieRecommendationItem, UserProfileDataForGroupRecs, Mood, TimeOfDay, ContentType, UserWeights, ViewingHistoryEntry } from '@/lib/types';
+import type { MovieRecommendationItem, UserProfileDataForGroupRecs, Mood, TimeOfDay, ContentType, UserWeights, ViewingHistoryEntry, Language } from '@/lib/types';
 import { fetchGroupRecommendationsAction } from '@/lib/actions';
 import { AppHeader } from '@/components/AppHeader';
 import { MovieRecommendations } from '@/components/MovieRecommendations';
@@ -54,10 +55,11 @@ export default function GroupPage() {
     const savedPrefs = localStorage.getItem(`${PREFERENCES_KEY_PREFIX}${userId}`);
     const savedHistory = localStorage.getItem(`${HISTORY_KEY_PREFIX}${userId}`);
 
-    let preferences: { mood: Mood, contentType: ContentType, userWeights: UserWeights } = {
+    let preferences: { mood: Mood, contentType: ContentType, userWeights: UserWeights, language: Language } = {
         mood: "Neutral",
         contentType: "BOTH",
         userWeights: { mood: 50, time: 25, history: 25 },
+        language: "Any",
     };
     if (savedPrefs) {
       try {
@@ -83,7 +85,8 @@ export default function GroupPage() {
       timeOfDay: currentTimeOfDay, // Use the current time for both for this session
       viewingHistory: history,
       userWeights: preferences.userWeights,
-      contentType: preferences.contentType
+      contentType: preferences.contentType,
+      language: preferences.language,
     };
   }, []);
 
@@ -136,7 +139,7 @@ export default function GroupPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="container mx-auto p-4 md:p-8 flex-grow flex flex-col items-center">
+      <main className="container mx-auto p-5 md:p-8 flex-grow flex flex-col items-center">
         <Card className="w-full max-w-lg shadow-lg">
           <CardHeader className="text-center items-center">
             <CardTitle className="text-2xl font-headline flex items-center justify-center gap-2 text-accent">
