@@ -41,7 +41,7 @@ export function MovieRecommendations({
         <h2 className="text-2xl font-headline font-semibold mb-6 text-accent flex items-center gap-2">
           <IconComponent className="h-7 w-7 animate-pulse-soft text-primary" /> Conjuring Recommendations...
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
           {[...Array(6)].map((_, i) => (
             <CardSkeleton key={i} />
           ))}
@@ -87,7 +87,7 @@ export function MovieRecommendations({
             </Button>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
         {currentRecommendations.map((movie, index) => (
           <div 
               key={`${movie.title}-${index}-${currentUserId}`} 

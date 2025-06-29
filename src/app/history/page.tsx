@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
@@ -82,7 +83,7 @@ export default function HistoryPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="container mx-auto p-4 md:p-8 flex-grow">
+      <main className="container mx-auto p-5 md:p-8 flex-grow">
         <div className="max-w-4xl mx-auto space-y-6">
           <ViewingHistoryTracker
             viewingHistory={viewingHistory}

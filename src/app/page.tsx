@@ -247,7 +247,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="container mx-auto p-4 md:p-8 flex-grow">
+      <main className="container mx-auto p-5 md:p-8 flex-grow">
         <div className="mb-8 p-6 bg-card shadow-lg rounded-lg border">
           <h2 className="text-2xl font-headline font-semibold mb-4 text-accent flex items-center gap-2">
             <SearchIcon className="h-7 w-7 text-primary" /> Find Something Specific?

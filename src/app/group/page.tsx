@@ -139,7 +139,7 @@ export default function GroupPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-      <main className="container mx-auto p-4 md:p-8 flex-grow flex flex-col items-center">
+      <main className="container mx-auto p-5 md:p-8 flex-grow flex flex-col items-center">
         <Card className="w-full max-w-lg shadow-lg">
           <CardHeader className="text-center items-center">
             <CardTitle className="text-2xl font-headline flex items-center justify-center gap-2 text-accent">
