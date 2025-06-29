@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Film, Home, History, Users, LogOut, Menu } from 'lucide-react';
@@ -27,7 +28,7 @@ export function AppHeader() {
         </Link>
         
         {/* Desktop Nav in the middle */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+        <nav className="hidden lg:flex items-center gap-1 lg:gap-2">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href} passHref>
               <Button
@@ -47,7 +48,7 @@ export function AppHeader() {
         {/* Right side: Actions */}
         <div className="flex items-center gap-2">
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
                 <ThemeToggle />
                 <Button asChild variant="ghost" size="sm">
                    <Link href="/select-user">
@@ -58,7 +59,7 @@ export function AppHeader() {
             </div>
 
             {/* Mobile Menu Trigger */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
