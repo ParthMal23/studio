@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { ViewingHistoryEntry, Mood, TimeOfDay } from '@/lib/types';
+import { LANGUAGES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +48,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
   const [newMovieCompleted, setNewMovieCompleted] = useState(true);
   const [newMovieMoodAtWatch, setNewMovieMoodAtWatch] = useState<Mood | undefined>(currentMood);
   const [newMovieTimeOfDayAtWatch, setNewMovieTimeOfDayAtWatch] = useState<TimeOfDay | undefined>(currentTime);
+  const [newMovieLanguageAtWatch, setNewMovieLanguageAtWatch] = useState<string | undefined>("Any");
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +72,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
       completed: newMovieCompleted,
       moodAtWatch: newMovieMoodAtWatch,
       timeOfDayAtWatch: newMovieTimeOfDayAtWatch,
+      languageAtWatch: newMovieLanguageAtWatch === 'Any' ? undefined : newMovieLanguageAtWatch,
     };
     onHistoryChange([...viewingHistory, newEntry]);
     setNewMovieTitle('');
@@ -77,6 +80,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
     setNewMovieCompleted(true);
     setNewMovieMoodAtWatch(currentMood);
     setNewMovieTimeOfDayAtWatch(currentTime);
+    setNewMovieLanguageAtWatch("Any");
     toast({ title: "History Updated", description: `${newMovieTitle} added to your viewing history.` });
   };
 
@@ -151,7 +155,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
               placeholder="e.g., The Grand Adventure"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="item-rating">Rating (1-5)</Label>
               <Input
@@ -163,6 +167,23 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                 onChange={(e) => setNewMovieRating(parseInt(e.target.value))}
               />
             </div>
+             <div>
+              <Label htmlFor="item-language-at-watch">Language When Watched</Label>
+              <Select value={newMovieLanguageAtWatch} onValueChange={(value) => setNewMovieLanguageAtWatch(value)}>
+                <SelectTrigger id="item-language-at-watch">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="item-mood-at-watch">Mood When Watched</Label>
               <Select value={newMovieMoodAtWatch} onValueChange={(value) => setNewMovieMoodAtWatch(value === "undefined" ? undefined : value as Mood)}>
@@ -243,6 +264,7 @@ export function ViewingHistoryTracker({ viewingHistory, onHistoryChange, current
                       ({item.completed ? "Completed" : "Not Completed"})
                       {item.moodAtWatch && `, Mood: ${item.moodAtWatch}`}
                       {item.timeOfDayAtWatch && `, Time: ${item.timeOfDayAtWatch}`}
+                      {item.languageAtWatch && `, Language: ${item.languageAtWatch}`}
                     </p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleRemoveMovie(item.id)} aria-label="Remove item">

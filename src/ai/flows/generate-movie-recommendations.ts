@@ -20,10 +20,13 @@ const GenerateContentRecommendationsInputSchema = z.object({
     .describe('The current time of day (e.g., morning, afternoon, evening, night).'),
   viewingHistory: z
     .string()
-    .describe('A summary of the user historical viewing data. This may include titles, ratings, completion status, and the mood the user was in when they watched the item (moodAtWatch).'),
+    .describe('A summary of the user historical viewing data. This may include titles, ratings, completion status, and the mood, time, or language the user was in when they watched the item (moodAtWatch, timeOfDayAtWatch, languageAtWatch).'),
   contentType: z
     .enum(["MOVIES", "TV_SERIES", "BOTH"])
     .describe('The type of content to recommend (MOVIES, TV_SERIES, or BOTH).'),
+  language: z
+    .string()
+    .describe('The desired language for the movie or TV series (e.g., "English", "Korean"). If "Any", do not filter by language, but still consider language patterns from history.'),
 });
 export type GenerateContentRecommendationsInput = z.infer<
   typeof GenerateContentRecommendationsInputSchema
@@ -36,7 +39,7 @@ const ContentRecommendationSchema = z.object({
   reason: z
     .string()
     .describe(
-      'The reason for recommending this item based on the user\'s mood, time of day, viewing history (including mood at watch), content type preference, or specific query.'
+      'The reason for recommending this item based on the user\'s mood, time of day, viewing history (including mood, time, and language at watch), content type preference, or specific query.'
     ),
   platform: z.string().describe('The name of the OTT platform where this content is available (e.g., Netflix, Hulu, Amazon Prime Video).'),
 });
@@ -65,15 +68,16 @@ Base your recommendations on:
 1. The user's current mood: {{{mood}}}
 2. The current time of day: {{{timeOfDay}}}
 3. Their viewing history: {{{viewingHistory}}}
-   - Pay attention to the 'moodAtWatch' if provided for specific items in the viewing history. This indicates the user's mood when they watched that item.
-   - For example, if a user watched action movies when their moodAtWatch was 'Excited', and their current mood is 'Excited', you might suggest similar action movies.
+   - Pay attention to 'moodAtWatch', 'timeOfDayAtWatch', and 'languageAtWatch' if provided for specific items in the viewing history. This indicates the user's context when they watched that item.
+   - For example, if a user watched Korean dramas (languageAtWatch: 'Korean') when their moodAtWatch was 'Happy', and their current mood is 'Happy', you might suggest similar Korean content.
 4. Their preferred content type: {{{contentType}}}
+5. Their preferred language: {{{language}}}. If the language is "Any", you can recommend content from any language, but you should still prioritize languages the user has shown a preference for in their viewing history based on context (like mood). If a specific language is requested, the recommendations MUST be in that language.
 
 If '{{{contentType}}}' is 'MOVIES', recommend only movies.
 If '{{{contentType}}}' is 'TV_SERIES', recommend only TV series.
 If '{{{contentType}}}' is 'BOTH', recommend a mix of movies and TV series.
 
-Provide the recommendations with their title, a brief description, the reason for the suggestion (incorporating moodAtWatch insights if relevant), and the OTT platform it's available on (e.g., Netflix, Amazon Prime, Hulu).
+Provide the recommendations with their title, a brief description, the reason for the suggestion (incorporating contextual insights if relevant), and the OTT platform it's available on (e.g., Netflix, Amazon Prime, Hulu).
 Each recommendation must adhere to the following structure:
 - title: The title of the movie or TV series (string).
 - description: A brief description (string).

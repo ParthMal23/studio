@@ -8,13 +8,14 @@ import { generateTextQueryRecommendations, GenerateTextQueryRecommendationsInput
 import { generateSurpriseRecommendations, GenerateSurpriseRecommendationsInput } from "@/ai/flows/generate-surprise-recommendations";
 
 import { fetchContentDetailsFromTmdb } from "@/services/tmdbService";
-import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem, FetchGroupRecommendationsParams, UserProfileDataForGroupRecs } from "./types";
+import type { ViewingHistoryEntry, ContentType, MovieRecommendationItem, FetchGroupRecommendationsParams, UserProfileDataForGroupRecs, Language } from "./types";
 
 interface FetchContentRecommendationsParams {
   mood: string;
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
   contentType: ContentType;
+  language: Language;
 }
 
 const COMMON_RECOMMENDATION_REASON_PREFIX = "Common Pick:";
@@ -30,7 +31,7 @@ export async function fetchContentRecommendationsAction(
   try {
     const viewingHistorySummary = params.viewingHistory.length > 0
       ? `User has watched: ${params.viewingHistory.map(m =>
-          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''})`
+          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''}${m.languageAtWatch ? `, language: ${m.languageAtWatch}` : ''})`
         ).join(', ')}.`
       : "User has no viewing history yet.";
 
@@ -39,6 +40,7 @@ export async function fetchContentRecommendationsAction(
       timeOfDay: params.timeOfDay,
       viewingHistory: viewingHistorySummary,
       contentType: params.contentType,
+      language: params.language,
     };
 
     const recommendationsFromAI = await generateContentRecommendations(input);
@@ -117,6 +119,7 @@ export async function fetchGroupRecommendationsAction(
       timeOfDay: params.user1Data.timeOfDay,
       viewingHistory: params.user1Data.viewingHistory,
       contentType: params.user1Data.contentType,
+      language: params.user1Data.language,
     });
 
     const recs2Result = await fetchContentRecommendationsAction({
@@ -124,6 +127,7 @@ export async function fetchGroupRecommendationsAction(
       timeOfDay: params.user2Data.timeOfDay,
       viewingHistory: params.user2Data.viewingHistory,
       contentType: params.user2Data.contentType,
+      language: params.user2Data.language,
     });
 
     if ('error' in recs1Result) return { error: `Error fetching recommendations for ${user1DisplayName}: ${recs1Result.error}`, type: 'common' };
@@ -151,8 +155,8 @@ export async function fetchGroupRecommendationsAction(
     const user1HistoryTitles = params.user1Data.viewingHistory.map(h => h.title).slice(0, 5).join(', ') || 'None'; // Limit history length
     const user2HistoryTitles = params.user2Data.viewingHistory.map(h => h.title).slice(0, 5).join(', ') || 'None'; // Limit history length
     
-    const user1ProfileSummary = `${user1DisplayName}: Mood - ${params.user1Data.mood}, Time - ${params.user1Data.timeOfDay}, Recent History - ${user1HistoryTitles}.`;
-    const user2ProfileSummary = `${user2DisplayName}: Mood - ${params.user2Data.mood}, Time - ${params.user2Data.timeOfDay}, Recent History - ${user2HistoryTitles}.`;
+    const user1ProfileSummary = `${user1DisplayName}: Prefers ${params.user1Data.language} content. Mood - ${params.user1Data.mood}, Time - ${params.user1Data.timeOfDay}, Recent History - ${user1HistoryTitles}.`;
+    const user2ProfileSummary = `${user2DisplayName}: Prefers ${params.user2Data.language} content. Mood - ${params.user2Data.mood}, Time - ${params.user2Data.timeOfDay}, Recent History - ${user2HistoryTitles}.`;
 
     let compromiseContentType: ContentType = "BOTH";
     if (params.user1Data.contentType === params.user2Data.contentType) {
@@ -208,6 +212,7 @@ interface FetchTextQueryRecommendationsParams {
   timeOfDay: string;
   viewingHistory: ViewingHistoryEntry[];
   contentType: ContentType;
+  language: Language;
 }
 
 export async function fetchTextQueryRecommendationsAction(
@@ -216,7 +221,7 @@ export async function fetchTextQueryRecommendationsAction(
   try {
     const viewingHistorySummary = params.viewingHistory.length > 0
       ? `User has watched: ${params.viewingHistory.map(m =>
-          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''})`
+          `${m.title} (rated ${m.rating}/5, completed: ${m.completed}${m.moodAtWatch ? `, mood when watched: ${m.moodAtWatch}` : ''}${m.timeOfDayAtWatch ? `, time: ${m.timeOfDayAtWatch}` : ''}${m.languageAtWatch ? `, language: ${m.languageAtWatch}` : ''})`
         ).join(', ')}.`
       : "User has no viewing history yet.";
 
@@ -226,6 +231,7 @@ export async function fetchTextQueryRecommendationsAction(
       timeOfDay: params.timeOfDay,
       viewingHistory: viewingHistorySummary,
       contentType: params.contentType,
+      language: params.language,
     };
 
     const recommendationsFromAI = await generateTextQueryRecommendations(input);
