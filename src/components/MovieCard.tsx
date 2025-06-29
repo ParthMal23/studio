@@ -84,18 +84,18 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-4 flex-grow">
+      <CardContent className="p-3 md:p-4 flex-grow">
         <div className="flex justify-between items-start mb-1">
-          <CardTitle className="font-headline text-xl text-foreground group-hover:text-accent-hover-foreground">{movie.title}</CardTitle>
+          <CardTitle className="font-headline text-lg md:text-xl text-foreground group-hover:text-accent-hover-foreground">{movie.title}</CardTitle>
           <Badge variant="secondary" className="whitespace-nowrap ml-2 shrink-0 group-hover:bg-accent-hover-foreground group-hover:text-accent-hover">
             {movie.platform}
           </Badge>
         </div>
-        <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-3 group-hover:text-accent-hover-foreground">
+        <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-2 sm:line-clamp-3 group-hover:text-accent-hover-foreground">
           {movie.description}
         </CardDescription>
       </CardContent>
-      <CardFooter className="p-4 bg-secondary/50 border-t group-hover:bg-accent-soft group-hover:border-accent-soft">
+      <CardFooter className="p-3 md:p-4 bg-accent-soft group-hover:border-accent-soft group-hover:bg-accent-soft/50 group-hover:dark:bg-accent-soft/10">
         <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
           <Info className="h-5 w-5 text-primary shrink-0 mt-0.5 group-hover:text-accent-soft-foreground" />
           <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
