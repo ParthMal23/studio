@@ -41,8 +41,8 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
   };
   
   const getAiHint = (title: string): string => {
-    const cleanedTitle = title.split(':')[0].replace(/[^\\w\\s]/gi, '').trim();
-    const words = cleanedTitle.split(/\\s+/).filter(Boolean);
+    const cleanedTitle = title.split(':')[0].replace(/\W\s/gi, '').trim();
+    const words = cleanedTitle.split(/\s+/).filter(Boolean);
     if (words.length === 1) return words[0].toLowerCase();
     if (words.length >= 2) return words.slice(0, 2).join(' ').toLowerCase();
     return "movie poster"; 
@@ -96,13 +96,13 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
           </div>
       </CardContent>
 
-      <div className="h-0 opacity-0 -translate-y-4 group-hover:h-full group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-in-out">
+      <div className="max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100 transition-all duration-500 ease-in-out">
           <CardContent className="p-3 md:p-4 pt-0">
             <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-2 sm:line-clamp-3">
               {movie.description}
             </CardDescription>
           </CardContent>
-          <CardFooter className="p-3 md:p-4 mt-auto bg-muted/30 group-hover:bg-accent-soft/50 border-t group-hover:text-accent-soft-foreground">
+          <CardFooter className="p-3 md:p-4 mt-auto group-hover:bg-accent-soft/50 border-t group-hover:text-accent-soft-foreground">
             <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
