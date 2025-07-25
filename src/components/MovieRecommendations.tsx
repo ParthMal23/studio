@@ -87,11 +87,11 @@ export function MovieRecommendations({
             </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+      <div className="grid grid-cols-1 justify-items-center sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {currentRecommendations.map((movie, index) => (
           <div 
               key={`${movie.title}-${index}-${currentUserId}`} 
-              className="animate-fade-in-up" 
+              className="animate-fade-in-up w-full max-w-xs sm:max-w-none" 
               style={{ animationDelay: `${index * 100}ms` }}>
             <MovieCard
               movie={movie}

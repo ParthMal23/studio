@@ -52,7 +52,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
 
   return (
     <Card
-      className="group h-full flex flex-col overflow-hidden shadow-lg transition-all duration-300 ease-in-out bg-card hover:border-primary sm:hover:scale-105"
+      className="group h-full flex flex-col overflow-hidden shadow-lg transition-all duration-300 ease-in-out bg-card hover:border-primary hover:scale-105"
       onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"
@@ -85,24 +85,27 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
         )}
       </CardHeader>
 
-      <div className="sm:group-hover:block sm:opacity-100 sm:translate-y-0 sm:h-auto transition-all duration-300 ease-in-out h-0 opacity-0 -translate-y-4 group-hover:h-full group-hover:opacity-100 group-hover:translate-y-0">
-          <CardContent className="p-3 md:p-4 flex-grow">
-            <div className="flex justify-between items-start mb-1">
-              <CardTitle className="font-headline text-lg md:text-xl text-foreground">
+      <CardContent className="p-3 md:p-4 flex-grow">
+          <div className="flex justify-between items-start mb-1">
+              <CardTitle className="font-headline text-md md:text-xl text-foreground">
                 {movie.title}
               </CardTitle>
               <Badge variant="secondary" className="whitespace-nowrap ml-2 shrink-0">
                 {movie.platform}
               </Badge>
-            </div>
+          </div>
+      </CardContent>
+
+      <div className="h-0 opacity-0 -translate-y-4 group-hover:h-full group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-in-out">
+          <CardContent className="p-3 md:p-4 pt-0">
             <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-2 sm:line-clamp-3">
               {movie.description}
             </CardDescription>
           </CardContent>
-          <CardFooter className="p-3 md:p-4 mt-auto bg-muted/30 border-t">
-            <div className="flex items-start space-x-2 text-sm text-muted-foreground">
+          <CardFooter className="p-3 md:p-4 mt-auto bg-muted/30 group-hover:bg-accent-soft/50 border-t group-hover:text-accent-soft-foreground">
+            <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <p className="font-body"><span className="font-semibold text-foreground/90">Why this?</span> {movie.reason}</p>
+              <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
             </div>
           </CardFooter>
       </div>
