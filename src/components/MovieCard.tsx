@@ -10,7 +10,7 @@ interface MovieCardProps {
   movie: MovieRecommendationItem;
   index: number;
   onCardClick?: (movie: MovieRecommendationItem) => void;
-  currentUserId: string | null; // Added currentUserId prop
+  currentUserId: string | null;
 }
 
 export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCardProps) {
@@ -41,8 +41,8 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
   };
   
   const getAiHint = (title: string): string => {
-    const cleanedTitle = title.split(':')[0].replace(/[^\\w\\s]/gi, '').trim();
-    const words = cleanedTitle.split(/\\s+/).filter(Boolean);
+    const cleanedTitle = title.split(':')[0].replace(/\W\s/gi, '').trim();
+    const words = cleanedTitle.split(/\s+/).filter(Boolean);
     if (words.length === 1) return words[0].toLowerCase();
     if (words.length >= 2) return words.slice(0, 2).join(' ').toLowerCase();
     return "movie poster"; 
@@ -52,7 +52,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
 
   return (
     <Card
-      className="group h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out bg-card cursor-pointer hover:scale-105 hover:border-primary hover:bg-accent-hover"
+      className="group h-full flex flex-col overflow-hidden shadow-lg transition-all duration-300 ease-in-out bg-card hover:border-primary hover:scale-105"
       onClick={handleCardInteraction}
       onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCardInteraction(); }}
       role="button"
@@ -84,23 +84,31 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-3 md:p-4 flex-grow">
-        <div className="flex justify-between items-start mb-1">
-          <CardTitle className="font-headline text-lg md:text-xl text-foreground group-hover:text-accent-hover-foreground">{movie.title}</CardTitle>
-          <Badge variant="secondary" className="whitespace-nowrap ml-2 shrink-0 group-hover:bg-accent-hover-foreground group-hover:text-accent-hover">
-            {movie.platform}
-          </Badge>
-        </div>
-        <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-2 sm:line-clamp-3 group-hover:text-accent-hover-foreground">
-          {movie.description}
-        </CardDescription>
+
+      <CardContent className="p-3 md:p-4 flex-grow bg-transparent">
+          <div className="flex justify-between items-start mb-1">
+              <CardTitle className="font-headline text-md md:text-xl text-foreground">
+                {movie.title}
+              </CardTitle>
+              <Badge variant="secondary" className="whitespace-nowrap ml-2 shrink-0">
+                {movie.platform}
+              </Badge>
+          </div>
       </CardContent>
-      <CardFooter className="p-3 md:p-4 mt-auto bg-muted/30 border-t group-hover:bg-accent-soft group-hover:border-accent-soft">
-        <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
-          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5 group-hover:text-accent-soft-foreground" />
-          <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
-        </div>
-      </CardFooter>
+
+      <div className="max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100 transition-all duration-500 ease-in-out overflow-hidden">
+          <CardContent className="p-3 md:p-4 pt-0">
+            <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-2 sm:line-clamp-3">
+              {movie.description}
+            </CardDescription>
+          </CardContent>
+          <CardFooter className="p-3 md:p-4 mt-auto group-hover:bg-accent-soft/50 border-t group-hover:text-accent-soft-foreground transition-colors duration-300">
+            <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
+              <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
+            </div>
+          </CardFooter>
+      </div>
     </Card>
   );
 }
