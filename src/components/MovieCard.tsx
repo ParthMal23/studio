@@ -85,7 +85,7 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
         )}
       </CardHeader>
 
-      <CardContent className="p-3 md:p-4 flex-grow">
+      <CardContent className="p-3 md:p-4 flex-grow bg-transparent">
           <div className="flex justify-between items-start mb-1">
               <CardTitle className="font-headline text-md md:text-xl text-foreground">
                 {movie.title}
@@ -96,13 +96,13 @@ export function MovieCard({ movie, index, onCardClick, currentUserId }: MovieCar
           </div>
       </CardContent>
 
-      <div className="max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+      <div className="max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100 transition-all duration-500 ease-in-out overflow-hidden">
           <CardContent className="p-3 md:p-4 pt-0">
             <CardDescription className="text-sm text-foreground/80 mb-3 font-body leading-relaxed line-clamp-2 sm:line-clamp-3">
               {movie.description}
             </CardDescription>
           </CardContent>
-          <CardFooter className="p-3 md:p-4 mt-auto group-hover:bg-accent-soft/50 border-t group-hover:text-accent-soft-foreground">
+          <CardFooter className="p-3 md:p-4 mt-auto group-hover:bg-accent-soft/50 border-t group-hover:text-accent-soft-foreground transition-colors duration-300">
             <div className="flex items-start space-x-2 text-sm text-muted-foreground group-hover:text-accent-soft-foreground">
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <p className="font-body"><span className="font-semibold text-foreground/90 group-hover:text-accent-soft-foreground">Why this?</span> {movie.reason}</p>
